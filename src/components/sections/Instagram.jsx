@@ -4,6 +4,9 @@ import aboutImg2 from '../../assets/images/about-img-2.jpg';
 const INSTAGRAM_URL =
   'https://www.instagram.com/barbearia_angelfortes/';
 
+const WHATSAPP_URL =
+  'https://wa.me/351967040348?text=Ol%C3%A1%21%20Gostaria%20de%20falar%20com%20a%20Barbearia%20Angel%20Fortes.';
+
 export default function Instagram() {
   return (
     <section className="instagram-section">
@@ -30,21 +33,50 @@ export default function Instagram() {
             da Angel Fortes.
           </p>
 
-          <a
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="instagram-button"
-          >
-            <span className="instagram-icon">
-              ↗
-            </span>
+          <div
+            style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+            }}
+            >
+            {/* INSTAGRAM */}
 
-            <span>
-              <small>Segue no Instagram</small>
-              @barbearia_angelfortes
-            </span>
-          </a>
+            <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="instagram-button"
+            >
+                <span className="instagram-icon">
+                ↗
+                </span>
+
+                <span>
+                <small>Segue no Instagram</small>
+                @barbearia_angelfortes
+                </span>
+            </a>
+
+
+            {/* WHATSAPP */}
+
+            <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="instagram-button"
+            >
+                <span className="instagram-icon">
+                ☏
+                </span>
+
+                <span>
+                <small>Fala connosco no WhatsApp</small>
+                +351 967 040 348
+                </span>
+            </a>
+            </div>
 
         </div>
 
