@@ -1,0 +1,51 @@
+@media (max-width: 900px) {
+  :root { --header-height: 76px; }
+  .desktop-nav { display: none; }
+  .menu-toggle { display: block; }
+  .header-book { display: none; }
+  .hero { padding-left: 5vw; padding-right: 5vw; }
+  .hero-content { margin-bottom: 105px; }
+  .hero-meta { display: grid; gap: 12px; left: 5vw; }
+  .quick-book { align-items: flex-start; flex-direction: column; }
+  .about { grid-template-columns: 1fr; }
+  .photo-stack { min-height: 520px; }
+  .service-grid, .product-grid, .review-grid { grid-template-columns: 1fr 1fr; }
+  .contact { grid-template-columns: 1fr; }
+  .contact iframe { min-height: 390px; }
+  .experience { background-attachment: scroll; }
+  .section-heading { align-items: flex-start; flex-direction: column; }
+  .reviews-layout { grid-template-columns: 1fr; gap: 45px; }
+}
+
+@media (max-width: 650px) {
+  :root { --header-height: 70px; }
+  .site-header { padding: 10px 4vw; }
+  .brand img { height: 43px; }
+  .hero { min-height: 760px; }
+  .hero h1 { font-size: 56px; }
+  .hero-copy { font-size: 16px; }
+  .hero-actions { align-items: stretch; flex-direction: column; width: 100%; }
+  .section { padding: 78px 5vw; }
+  .section h2 { font-size: 42px; }
+  .stats { gap: 20px; flex-wrap: wrap; }
+  .photo-stack { min-height: 410px; }
+  .photo-main { right: 35px; width: calc(100% - 35px); }
+  .photo-small { width: 47%; border-width: 6px; }
+  .service-grid, .product-grid, .review-grid { grid-template-columns: 1fr; }
+  .experience { padding: 55px 5vw; }
+  .experience-card { padding: 32px 25px; }
+  .experience h2 { font-size: 43px; }
+  .contact-card { padding: 70px 6vw; }
+  footer { grid-template-columns: 1fr; }
+  .footer-links { flex-wrap: wrap; }
+  .booking-modal { padding: 27px 18px; }
+  .booking-head h2 { font-size: 37px; }
+  .booking-services { grid-template-columns: 1fr; }
+  .time-grid { grid-template-columns: repeat(3,1fr); }
+  .field-grid { grid-template-columns: 1fr; }
+  .field-grid .wide { grid-column: auto; }
+  .steps { gap: 10px; font-size: 11px; }
+  .admin-header, .admin-top { align-items: flex-start; flex-direction: column; }
+  .kpis { grid-template-columns: 1fr; }
+  .reviews-actions { flex-direction: column; align-items: stretch; }
+}
