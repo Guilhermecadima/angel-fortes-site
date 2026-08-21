@@ -7,13 +7,65 @@ a { text-decoration: none; color: inherit; }
 img { max-width: 100%; display: block; }
 .btn { border: 0; padding: 14px 20px; border-radius: 999px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease, opacity .2s ease; }
 .btn:hover { transform: translateY(-1px); }
-.btn-light { background: var(--white); color: #111; }
-.btn-dark { background: #111; color: var(--white); }
-.btn-ghost { background: rgba(255,255,255,.08); color: var(--white); border: 1px solid rgba(255,255,255,.25); }
-.btn-outline { background: var(--white); border: 1px solid #ccc; color: #111; }
 .full { width: 100%; }
-.eyebrow { text-transform: uppercase; letter-spacing: .22em; font-size: 12px; font-weight: 700; color: #e8e1d6; }
-.eyebrow.dark { color: #726b61; }
 .section { padding: 110px 6vw; }
 .section h2, .quick-book h2, .experience h2 { font-family: 'Oswald', sans-serif; text-transform: uppercase; line-height: .94; margin: 12px 0; }
 .section h2 { font-size: clamp(46px, 6vw, 78px); max-width: 800px; }
+
+/* ==============================
+   GOLD BUTTONS / TYPOGRAPHY
+============================== */
+
+body {
+  background: var(--paper);
+  color: #17130e;
+}
+
+.btn-light {
+  background: #d4af37;
+  color: #0b0b0b;
+}
+
+.btn-light:hover {
+  background: #ead783;
+}
+
+.btn-dark {
+  background: var(--black);
+  color: var(--white);
+}
+
+.btn-dark:hover {
+  background: var(--gold);
+  color: #120f0a;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--white);
+  border: 1px solid rgba(198, 161, 91, 0.52);
+}
+
+.btn-ghost:hover {
+  background: rgba(198, 161, 91, 0.16);
+  border-color: var(--gold);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--gold-dark);
+  color: #17130e;
+}
+
+.btn-outline:hover {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+}
+
+.eyebrow {
+  color: var(--gold-light);
+}
+
+.eyebrow.dark {
+  color: var(--gold-dark);
+}

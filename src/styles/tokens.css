@@ -1,11 +1,21 @@
 :root {
   --black: #0b0b0b;
   --black-soft: #151515;
-  --paper: #f3f1ec;
-  --paper-light: #f7f5f0;
+  --black-warm: #1b1914;
+
+  /* GOLD */
+  --gold: #d4af37;
+  --gold-light: #ead783;
+  --gold-dark: #aa891f;
+  --gold-soft: #f3e9c4;
+
+  /* LIGHT */
+  --paper: #f6f3ec;
+  --paper-light: #fcfaf5;
+
   --white: #ffffff;
-  --muted: #77736d;
-  --line: #d9d4ca;
-  --lime: #d9ff43;
-  --header-height: 82px;
+  --muted: #756f65;
+  --line: #ded7c8;
+
+  --lime: var(--gold);
 }

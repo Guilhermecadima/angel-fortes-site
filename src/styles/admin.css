@@ -16,3 +16,28 @@
 .admin-table-wrap th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #777; }
 .pill { padding: 5px 9px; background: #e5ff8c; border-radius: 999px; font-size: 11px; }
 .admin-empty { padding: 50px; text-align: center; color: #777; }
+.admin-page {
+  background: var(--paper);
+}
+
+.admin-header {
+  background: var(--black);
+}
+
+.kpi {
+  background: #fffdf8;
+  border-color: rgba(159, 125, 60, 0.25);
+}
+
+.kpi strong {
+  color: var(--gold-dark);
+}
+
+.admin-table-wrap {
+  background: #fffdf8;
+  border-color: rgba(159, 125, 60, 0.25);
+}
+
+.pill {
+  background: var(--gold-soft);
+}
