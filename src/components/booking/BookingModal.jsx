@@ -9,6 +9,31 @@ function getTomorrow() {
   return date.toISOString().split('T')[0];
 }
 
+const response = await fetch('/api/booking', {
+  method: 'POST',
+
+  headers: {
+    'Content-Type': 'application/json',
+  },
+
+  body: JSON.stringify({
+    name: customerName,
+    phone: customerPhone,
+    email: customerEmail,
+
+    service: selectedService.name,
+
+    date: selectedDate,
+    time: selectedTime,
+
+    price: selectedService.price,
+  }),
+});
+
+if (!response.ok) {
+  throw new Error('Erro ao enviar marcação');
+}
+
 export default function BookingModal({ open, initialServiceId, onClose }) {
   const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState(null);
