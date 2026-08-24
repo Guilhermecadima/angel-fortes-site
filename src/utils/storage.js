@@ -1,5 +1,5 @@
 const BOOKINGS_KEY = 'af_bookings';
-const CART_KEY = 'af_cart';
+const CART_KEY = 'af_store_cart_v2';
 
 export function readBookings() {
   try {
@@ -22,7 +22,8 @@ export function clearBookings() {
 
 export function readCart() {
   try {
-    return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    const value = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    return Array.isArray(value) ? value : [];
   } catch {
     return [];
   }

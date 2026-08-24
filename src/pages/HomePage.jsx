@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Hero from '../components/sections/Hero';
@@ -12,47 +12,40 @@ import Reviews from '../components/sections/Reviews';
 import Contact from '../components/sections/Contact';
 import BookingModal from '../components/booking/BookingModal';
 import CartDrawer from '../components/shop/CartDrawer';
-import { readCart, saveCart } from '../utils/storage';
+import { useCart } from '../hooks/useCart';
 
 export default function HomePage() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
-  const [cart, setCart] = useState(() => readCart());
 
-  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.qty, 0), [cart]);
+  const {
+    cart,
+    count,
+    total,
+    add,
+    remove,
+    setQuantity,
+  } = useCart();
 
   const openBooking = (serviceId = null) => {
     setSelectedServiceId(serviceId);
     setBookingOpen(true);
   };
 
-  const updateCart = (nextCart) => {
-    setCart(nextCart);
-    saveCart(nextCart);
-  };
-
-  const addToCart = (productId) => {
-    const existing = cart.find((item) => item.id === productId);
-    const nextCart = existing
-      ? cart.map((item) => item.id === productId ? { ...item, qty: item.qty + 1 } : item)
-      : [...cart, { id: productId, qty: 1 }];
-
-    updateCart(nextCart);
+  const addToCart = (product) => {
+    add(product);
     setCartOpen(true);
-  };
-
-  const removeFromCart = (productId) => {
-    updateCart(cart.filter((item) => item.id !== productId));
   };
 
   return (
     <>
       <Header
-        cartCount={cartCount}
+        cartCount={count}
         onBook={openBooking}
         onOpenCart={() => setCartOpen(true)}
       />
+
       <main>
         <Hero onBook={openBooking} />
         <QuickBook onBook={openBooking} />
@@ -64,6 +57,7 @@ export default function HomePage() {
         <Instagram />
         <Contact />
       </main>
+
       <Footer />
 
       <BookingModal
@@ -71,11 +65,14 @@ export default function HomePage() {
         initialServiceId={selectedServiceId}
         onClose={() => setBookingOpen(false)}
       />
+
       <CartDrawer
         open={cartOpen}
         cart={cart}
+        total={total}
         onClose={() => setCartOpen(false)}
-        onRemove={removeFromCart}
+        onRemove={remove}
+        onQuantityChange={setQuantity}
       />
     </>
   );

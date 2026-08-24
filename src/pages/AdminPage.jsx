@@ -1,78 +1,100 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { clearBookings, readBookings } from '../utils/storage';
-import { formatCurrency } from '../utils/currency';
+import AdminLogin from '../components/admin/AdminLogin';
+import ProductAdminPanel from '../components/admin/ProductAdminPanel';
+import storeLogo from '../assets/images/tudo-de-compras.png';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { getAdminSession, signOutAdmin, subscribeToAuth } from '../services/auth';
 
 export default function AdminPage() {
-  const [bookings, setBookings] = useState(() => readBookings());
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const today = new Date().toISOString().split('T')[0];
-  const revenue = useMemo(() => bookings.reduce((sum, booking) => sum + Number(booking.price || 0), 0), [bookings]);
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return undefined;
+    }
 
-  const handleClear = () => {
-    if (!window.confirm('Apagar todas as marcações da demo?')) return;
-    clearBookings();
-    setBookings([]);
+    let mounted = true;
+
+    getAdminSession()
+      .then((currentSession) => {
+        if (mounted) setSession(currentSession);
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    const unsubscribe = subscribeToAuth((nextSession) => {
+      setSession(nextSession);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="admin-setup-page">
+        <div className="admin-setup-card">
+          <img src={storeLogo} alt="Tudo de Compras" />
+          <p className="admin-kicker">Configuração necessária</p>
+          <h1>O painel já está preparado.</h1>
+          <p>
+            Falta apenas criar/configurar o Supabase e preencher as duas variáveis no ficheiro
+            <code>.env</code>.
+          </p>
+
+          <pre>{`VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...`}</pre>
+
+          <p>
+            O SQL necessário está em <strong>supabase/store_setup.sql</strong>.
+          </p>
+
+          <Link className="btn btn-dark" to="/">Voltar ao site</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="admin-loading-page">A abrir o painel...</div>;
+  }
+
+  if (!session) {
+    return <AdminLogin onSuccess={setSession} />;
+  }
+
+  const logout = async () => {
+    await signOutAdmin();
+    setSession(null);
   };
 
   return (
     <div className="admin-page">
-      <header className="admin-header">
-        <h1>Angel Fortes · Admin</h1>
-        <Link to="/">← Voltar ao site</Link>
+      <header className="admin-header admin-store-header">
+        <Link className="admin-brand" to="/loja">
+          <img src={storeLogo} alt="Tudo de Compras" />
+
+          <div>
+            <strong>Gestão da loja</strong>
+            <span>{session.user.email}</span>
+          </div>
+        </Link>
+
+        <div className="admin-header-actions">
+          <Link to="/loja">Ver loja</Link>
+          <button type="button" onClick={logout}>Terminar sessão</button>
+        </div>
       </header>
 
       <main className="admin-wrap">
-        <div className="admin-top">
-          <div>
-            <p className="admin-kicker">Painel de demonstração</p>
-            <h2>Agendamentos</h2>
-            <p className="admin-note">
-              As marcações feitas na demo pública aparecem aqui porque são guardadas no navegador.
-              Em produção, isto passa para autenticação e base de dados Supabase.
-            </p>
-          </div>
-          <button className="btn btn-dark" onClick={handleClear}>Limpar demo</button>
-        </div>
-
-        <div className="kpis">
-          <div className="kpi"><span>Total</span><strong>{bookings.length}</strong></div>
-          <div className="kpi"><span>Hoje</span><strong>{bookings.filter((booking) => booking.date === today).length}</strong></div>
-          <div className="kpi"><span>Receita agendada</span><strong>{formatCurrency(revenue)}</strong></div>
-        </div>
-
-        <div className="admin-table-wrap">
-          {bookings.length === 0 ? (
-            <div className="admin-empty">Ainda não existem marcações nesta demo.</div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Serviço</th>
-                  <th>Data</th>
-                  <th>Hora</th>
-                  <th>Contacto</th>
-                  <th>Valor</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map((booking) => (
-                  <tr key={booking.id}>
-                    <td><strong>{booking.name}</strong><br /><small>{booking.email}</small></td>
-                    <td>{booking.service}</td>
-                    <td>{new Date(`${booking.date}T12:00:00`).toLocaleDateString('pt-PT')}</td>
-                    <td>{booking.time}</td>
-                    <td>{booking.phone}</td>
-                    <td>{formatCurrency(booking.price)}</td>
-                    <td><span className="pill">{booking.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <ProductAdminPanel />
       </main>
     </div>
   );
