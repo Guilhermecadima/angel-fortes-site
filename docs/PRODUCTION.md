@@ -1,43 +1,53 @@
-# Passagem da demo para produção
+# Checklist para lançamento — Angel Fortes
 
-A versão atual é uma demo frontend. O website e os formulários funcionam, mas marcações e carrinho são guardados em `localStorage`.
+## Homepage
+
+O primeiro bloco após o header é agora o bloco prioritário de **Agendamento**.
+No desktop, WhatsApp e Instagram aparecem ao lado. No telemóvel, aparecem imediatamente abaixo.
+O restante conteúdo da barbearia mantém a estrutura normal depois deste bloco.
 
 ## Agendamentos
 
-Para produção:
+O formulário envia a marcação através de `/api/booking` e Resend.
+Antes do lançamento confirma na Vercel:
 
-1. Criar um projeto Supabase.
-2. Executar `supabase/schema.sql`.
-3. Instalar `@supabase/supabase-js`.
-4. Criar `src/lib/supabase.js`.
-5. Trocar `saveBooking()` por um `insert` na tabela de marcações.
-6. Consultar horários ocupados antes de apresentar slots ao utilizador.
-7. Adicionar regras para folgas, almoço, férias e duração de cada serviço.
+- `RESEND_API_KEY`
+- `BOOKING_EMAIL`
 
-## Admin
+Nota: os horários continuam a ser uma grelha definida no frontend. Para impedir duas pessoas de reservarem o mesmo horário em simultâneo, a fase seguinte deve persistir marcações no Supabase e validar disponibilidade no servidor.
 
-A rota `/admin` é apenas demonstrativa e não tem login.
+## Loja Tudo de Compras
 
-Antes do lançamento deve existir:
+Já inclui:
 
-- autenticação;
-- autorização para utilizadores administrativos;
-- leitura das marcações pela base de dados;
-- alteração de estado da marcação;
-- gestão de horários e serviços.
-
-## Loja
-
-Os produtos atuais são placeholders visuais. Para uma loja real:
-
-- tabela de produtos;
+- catálogo Supabase;
+- pesquisa e categorias;
 - stock;
-- encomendas;
-- checkout seguro;
-- webhooks de pagamento;
-- página de confirmação;
-- política de devoluções/termos.
+- produtos ativos/inativos e destaque;
+- detalhe de produto;
+- carrinho;
+- admin com Supabase Auth;
+- upload de imagens pelo Supabase Storage;
+- Stripe Checkout preparado;
+- reserva de stock antes do pagamento;
+- webhook e registo de encomendas;
+- página de sucesso e cancelamento.
 
-## Deploy
+Executa `supabase/store_setup.sql` para garantir que o schema está atualizado.
 
-Vercel ou Netlify funcionam bem com Vite. Como o projeto usa `BrowserRouter`, configura um rewrite/fallback de todas as rotas para `index.html`, para que `/admin` funcione ao atualizar a página.
+Para configurar Stripe, segue `docs/STRIPE_SETUP.md`.
+
+## Antes de apontar o domínio
+
+- confirmar `/` no desktop e telemóvel;
+- confirmar botão `Marcar agora` e email de marcação;
+- confirmar WhatsApp e Instagram;
+- confirmar `/loja` e cada produto;
+- confirmar login `/admin`;
+- testar criação/edição/upload de um produto;
+- completar uma compra Stripe em Test mode;
+- confirmar webhook e desconto de stock;
+- definir custo de envio;
+- substituir chaves Stripe Test por Live só no final;
+- fazer Redeploy;
+- só depois ligar o domínio.

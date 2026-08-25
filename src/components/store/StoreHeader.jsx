@@ -23,9 +23,11 @@ export default function StoreHeader({ cartCount, onOpenCart }) {
         </nav>
 
         <div className="store-header-actions">
-          <button type="button" className="store-cart-button" onClick={onOpenCart}>
-            Saco <span>{cartCount}</span>
-          </button>
+          {onOpenCart && (
+            <button type="button" className="store-cart-button" onClick={onOpenCart}>
+              Saco <span>{cartCount}</span>
+            </button>
+          )}
 
           <button
             type="button"

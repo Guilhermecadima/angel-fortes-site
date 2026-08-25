@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import storeLogo from '../../assets/images/tudo-de-compras.png';
 import { formatCurrency } from '../../utils/currency';
@@ -10,6 +11,43 @@ export default function CartDrawer({
   onRemove,
   onQuantityChange,
 }) {
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+
+  const checkout = async () => {
+    if (!cart.length || checkoutLoading) return;
+
+    setCheckoutLoading(true);
+    setCheckoutError('');
+
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cart: cart.map((item) => ({
+            id: item.id,
+            qty: item.qty,
+          })),
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.message || 'Não foi possível iniciar o pagamento.');
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setCheckoutError(error.message || 'Não foi possível iniciar o pagamento.');
+      setCheckoutLoading(false);
+    }
+  };
+
   return (
     <>
       <aside className={`cart-drawer ${open ? 'open' : ''}`} aria-hidden={!open}>
@@ -64,16 +102,23 @@ export default function CartDrawer({
             <strong>{formatCurrency(total)}</strong>
           </div>
 
+          {checkoutError && (
+            <div className="checkout-error" role="alert">
+              {checkoutError}
+            </div>
+          )}
+
           <button
             className="btn btn-dark full"
-            disabled={cart.length === 0}
-            onClick={() => window.alert('Checkout ficará para a próxima fase da loja.')}
+            disabled={cart.length === 0 || checkoutLoading}
+            onClick={checkout}
           >
-            Finalizar compra
+            {checkoutLoading ? 'A abrir pagamento...' : 'Pagar em segurança →'}
           </button>
 
           <small>
-            O carrinho já está funcional. Pagamentos e encomendas não fazem parte desta fase.
+            Pagamento processado em ambiente seguro pela Stripe. O preço e o stock são
+            confirmados novamente antes de abrir o checkout.
           </small>
         </div>
       </aside>

@@ -116,7 +116,7 @@ export default function ProductPage() {
               )}
 
               <div className="product-detail-note">
-                Pagamentos e encomendas serão adicionados numa fase posterior.
+                Pagamento seguro disponível no checkout. O stock é confirmado antes de iniciares o pagamento.
               </div>
             </div>
           </section>

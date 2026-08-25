@@ -9,15 +9,279 @@
 .menu-toggle { display: none; background: none; color: #fff; border: 0; font-size: 24px; }
 .mobile-menu { display: none; position: fixed; z-index: 29; top: var(--header-height); left: 0; right: 0; background: #111; color: #fff; padding: 22px 5vw; border-top: 1px solid #222; }
 .mobile-menu.open { display: grid; gap: 18px; }
-.hero { min-height: 760px; height: 100vh; position: relative; color: #fff; display: flex; align-items: flex-end; padding: 0 6vw 8vh; overflow: hidden; }
-.hero-media { position: absolute; inset: 0; background-position: center 35%; background-size: cover; background-repeat: no-repeat; filter: grayscale(1); transform: scale(1.03); }
-.hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.52) 52%,rgba(0,0,0,.2)), linear-gradient(0deg,rgba(0,0,0,.86),transparent 54%); }
-.hero-content { position: relative; z-index: 2; max-width: 850px; margin-bottom: 65px; }
-.hero h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; line-height: .94; margin: 12px 0; font-size: clamp(58px,9vw,130px); max-width: 950px; }
-.hero h1 span { -webkit-text-stroke: 1px #fff; color: transparent; }
-.hero-copy { font-size: 18px; line-height: 1.65; max-width: 560px; color: #ddd; }
-.hero-actions { display: flex; gap: 10px; margin-top: 28px; }
-.hero-meta { position: absolute; z-index: 3; left: 6vw; right: 6vw; bottom: 24px; display: flex; gap: 42px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.25); }
+/* ==========================================
+   HERO — PRIMEIRO ECRÃ
+========================================== */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+
+  display: grid;
+  place-items: center;
+
+  padding:
+    calc(var(--header-height) + 40px)
+    6vw
+    55px;
+
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+  background: #080808;
+}
+
+/* FOTO */
+.hero-media {
+  position: absolute;
+  inset: 0;
+
+  background-position: center 15%;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  filter:
+    grayscale(1)
+    contrast(1.04);
+
+  transform: scale(1.025);
+}
+
+/* ESCURECER FOTO */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.35) 50%,
+      rgba(0, 0, 0, 0.18) 100%
+    );
+}
+/* CONTEÚDO CENTRAL */
+.hero-content {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 1100px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* BARBEARIA */
+.hero-eyebrow {
+  margin: 0 0 24px;
+
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+/* ANGEL FORTES */
+.hero h1 {
+  margin: 0;
+
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(68px, 9vw, 145px);
+  font-weight: 700;
+
+  line-height: .9;
+  letter-spacing: -.035em;
+
+  text-transform: uppercase;
+  color: #fff;
+}
+
+/* BOTÃO PRINCIPAL */
+.hero-book-button {
+  margin-top: 48px;
+
+  min-width: 220px;
+  min-height: 52px;
+
+  padding: 15px 28px;
+
+  border: 1px solid #fff;
+  background: #fff;
+  color: #090909;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .025em;
+
+  cursor: pointer;
+
+  transition:
+    background .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
+}
+
+.hero-book-button:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #0b0b0b;
+
+  transform: translateY(-2px);
+}
+
+/* WHATSAPP + INSTAGRAM */
+.hero-socials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 17px;
+
+  margin-top: 25px;
+}
+
+.hero-socials a {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: rgba(255, 255, 255, .78);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+
+  text-transform: uppercase;
+
+  transition:
+    color .2s ease,
+    transform .2s ease;
+}
+
+.hero-socials a:hover {
+  color: var(--gold-light);
+  transform: translateY(-1px);
+}
+
+.hero-socials a > span {
+  color: var(--gold-light);
+  font-size: 16px;
+}
+
+.hero-social-divider {
+  width: 1px;
+  height: 15px;
+
+  background: rgba(255, 255, 255, .32);
+}
+
+/* INDICADOR EM BAIXO */
+.hero-scroll {
+  position: absolute;
+  z-index: 3;
+
+  left: 50%;
+  bottom: 22px;
+
+  width: 22px;
+  height: 34px;
+
+  display: flex;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 20px;
+
+  transform: translateX(-50%);
+}
+
+.hero-scroll span {
+  width: 3px;
+  height: 7px;
+
+  margin-top: 7px;
+
+  border-radius: 20px;
+
+  background: #fff;
+
+  animation: hero-scroll-animation 1.7s infinite;
+}
+
+@keyframes hero-scroll-animation {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  35% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+
+/* MOBILE */
+@media (max-width: 650px) {
+
+  .hero {
+    min-height: 100svh;
+
+    padding:
+      calc(var(--header-height) + 30px)
+      5vw
+      45px;
+  }
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  /* IMPORTANTE PARA ESTA FOTO */
+  background-position: center 45%;
+
+  filter: none;
+  transform: none;
+}
+
+  .hero-eyebrow {
+    margin-bottom: 18px;
+    font-size: 10px;
+  }
+
+  .hero h1 {
+    font-size: clamp(55px, 18vw, 82px);
+  }
+
+  .hero-book-button {
+    width: min(100%, 280px);
+
+    margin-top: 35px;
+  }
+
+  .hero-socials {
+    margin-top: 22px;
+    gap: 12px;
+  }
+
+  .hero-socials a {
+    font-size: 10px;
+  }
+}
 .hero-meta div { display: grid; gap: 5px; }
 .hero-meta span { font-size: 11px; text-transform: uppercase; letter-spacing: .15em; color: #aaa; }
 .hero-meta strong { font-size: 13px; }
@@ -1345,4 +1609,280 @@ footer {
     max-width: 100%;
   }
 
+}
+
+/* ==========================================
+   PRIORIDADE — AGENDAMENTO + REDES
+========================================== */
+.priority-actions {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .55fr);
+  min-height: 600px;
+  padding-top: var(--header-height);
+  background: #f8f5ed;
+  border-bottom: 1px solid #ded7c8;
+}
+
+.priority-booking-card {
+  position: relative;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(54px, 7vw, 100px) 6vw 48px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(212,175,55,.17), transparent 25%),
+    linear-gradient(135deg, #fcfaf5 0%, #f2ecdf 100%);
+  color: #111;
+}
+
+.priority-booking-card::after {
+  content: 'MARCAR';
+  position: absolute;
+  right: -1.5vw;
+  bottom: -2.6vw;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(170,137,31,.12);
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(100px, 15vw, 260px);
+  font-weight: 700;
+  line-height: .78;
+  pointer-events: none;
+}
+
+.priority-booking-copy,
+.priority-booking-meta {
+  position: relative;
+  z-index: 2;
+}
+
+.priority-booking-copy {
+  max-width: 900px;
+}
+
+.priority-booking-copy h1 {
+  max-width: 950px;
+  margin: 8px 0 24px;
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(54px, 7vw, 104px);
+  line-height: .91;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+
+.priority-booking-copy > p:not(.eyebrow) {
+  max-width: 620px;
+  margin-bottom: 28px;
+  color: #625c52;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.priority-book-btn {
+  min-height: 54px;
+  padding: 15px 23px;
+  background: #0b0b0b;
+  color: #fff;
+  border: 1px solid #0b0b0b;
+}
+
+.priority-book-btn:hover {
+  background: var(--gold);
+  color: #17130e;
+  border-color: var(--gold);
+}
+
+.priority-booking-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  max-width: 760px;
+  padding-top: 28px;
+  margin-top: 48px;
+  border-top: 1px solid #d5ccba;
+}
+
+.priority-booking-meta div {
+  display: grid;
+  gap: 6px;
+}
+
+.priority-booking-meta span {
+  color: #8c8067;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.priority-booking-meta strong {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.priority-social-card {
+  min-height: 600px;
+  display: grid;
+  grid-template-rows: minmax(230px, .82fr) auto;
+  background: #0b0b0b;
+  color: #fff;
+  border-left: 1px solid rgba(212,175,55,.22);
+}
+
+.priority-social-image {
+  position: relative;
+  min-height: 240px;
+  overflow: hidden;
+}
+
+.priority-social-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,.7), transparent 55%);
+}
+
+.priority-social-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(.15) contrast(1.04);
+}
+
+.priority-social-image > span {
+  position: absolute;
+  z-index: 2;
+  left: 25px;
+  bottom: 20px;
+  color: var(--gold-light);
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .18em;
+}
+
+.priority-social-copy {
+  padding: 34px 30px 32px;
+}
+
+.priority-social-copy h2 {
+  margin: 4px 0 10px;
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(34px, 3vw, 48px);
+  text-transform: uppercase;
+}
+
+.priority-social-copy > p:not(.eyebrow) {
+  margin-bottom: 22px;
+  color: #bcb7ae;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.priority-social-links {
+  display: grid;
+  gap: 9px;
+}
+
+.priority-social-link {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 68px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.13);
+  background: rgba(255,255,255,.035);
+  transition: .2s ease;
+}
+
+.priority-social-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-dark);
+  background: rgba(212,175,55,.07);
+}
+
+.priority-social-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--gold-dark);
+  color: var(--gold-light);
+  font-size: 18px;
+}
+
+.priority-social-link > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.priority-social-link small {
+  color: #8d8982;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.priority-social-link b {
+  color: var(--gold-light);
+  font-size: 16px;
+}
+
+@media (max-width: 980px) {
+  .priority-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .priority-booking-card,
+  .priority-social-card {
+    min-height: auto;
+  }
+
+  .priority-social-card {
+    grid-template-columns: minmax(180px, .42fr) 1fr;
+    grid-template-rows: none;
+    border-left: 0;
+    border-top: 1px solid rgba(212,175,55,.22);
+  }
+}
+
+@media (max-width: 650px) {
+  .priority-actions {
+    padding-top: var(--header-height);
+  }
+
+  .priority-booking-card {
+    padding: 50px 5vw 38px;
+  }
+
+  .priority-booking-copy h1 {
+    font-size: 50px;
+  }
+
+  .priority-booking-meta {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 38px;
+  }
+
+  .priority-social-card {
+    grid-template-columns: 1fr;
+  }
+
+  .priority-social-image {
+    min-height: 210px;
+  }
+
+  .priority-social-copy {
+    padding: 28px 5vw 32px;
+  }
 }

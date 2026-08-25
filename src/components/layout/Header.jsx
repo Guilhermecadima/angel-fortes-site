@@ -10,13 +10,14 @@ export default function Header({ cartCount, onBook, onOpenCart }) {
   return (
     <>
       <header className="site-header">
-        <a className="brand" href="/#top" aria-label="Angel Fortes - início">
+        <a className="brand" href="/#marcar" aria-label="Angel Fortes - início">
           <img src={logo} alt="Angel Fortes Barbearia" />
         </a>
 
         <nav className="desktop-nav" aria-label="Navegação principal">
-          <a href="/#sobre">Sobre</a>
+          <a href="/#marcar">Marcar</a>
           <a href="/#servicos">Serviços</a>
+          <a href="/#sobre">Sobre</a>
           <Link to="/loja">Loja</Link>
           <a href="/#contactos">Contactos</a>
         </nav>
@@ -42,8 +43,9 @@ export default function Header({ cartCount, onBook, onOpenCart }) {
       </header>
 
       <div className={`mobile-menu ${mobileOpen ? 'open' : ''}`}>
-        <a href="/#sobre" onClick={closeMobile}>Sobre</a>
+        <a href="/#marcar" onClick={closeMobile}>Marcar</a>
         <a href="/#servicos" onClick={closeMobile}>Serviços</a>
+        <a href="/#sobre" onClick={closeMobile}>Sobre</a>
         <Link to="/loja" onClick={closeMobile}>Loja</Link>
         <a href="/#contactos" onClick={closeMobile}>Contactos</a>
 
