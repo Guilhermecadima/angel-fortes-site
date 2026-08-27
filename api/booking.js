@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       const { error: emailError } =
         await resend.emails.send({
           from:
-            'Angel Fortes <onboarding@resend.dev>',
+            process.env.BOOKING_EMAIL_FROM,
 
           to: process.env.BOOKING_EMAIL,
 
