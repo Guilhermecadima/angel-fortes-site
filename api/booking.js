@@ -1,6 +1,9 @@
 import { Resend } from 'resend';
+import { supabaseAdmin } from './supabaseAdmin.js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(
+  process.env.RESEND_API_KEY,
+);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,6 +21,7 @@ export default async function handler(req, res) {
       date,
       time,
       price,
+      marketingConsent = false,
     } = req.body;
 
     if (
@@ -33,86 +37,205 @@ export default async function handler(req, res) {
       });
     }
 
-    await resend.emails.send({
-      from: 'Angel Fortes <onboarding@resend.dev>',
+    /*
+    |--------------------------------------------------------------------------
+    | 1. GUARDAR MARCAÇÃO NO SUPABASE
+    |--------------------------------------------------------------------------
+    */
 
-      to: process.env.BOOKING_EMAIL,
+    const {
+      data: appointment,
+      error: supabaseError,
+    } = await supabaseAdmin
+      .from('appointments')
+      .insert({
+        name,
+        phone,
+        email,
 
-      subject: `Nova marcação — ${service}`,
+        service,
+        price: price || null,
 
-      html: `
-        <div
-          style="
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: auto;
-            color: #111;
-          "
-        >
-          <h1>Nova marcação</h1>
+        date,
+        time,
 
-          <p>
-            Foi efetuada uma nova marcação através
-            do website da Barbearia Angel Fortes.
-          </p>
+        status: 'confirmed',
 
-          <hr />
+        marketing_consent:
+          Boolean(marketingConsent),
 
-          <h3>Cliente</h3>
+        followup_sent_at: null,
+      })
+      .select()
+      .single();
 
-          <p>
-            <strong>Nome:</strong> ${name}
-          </p>
+    if (supabaseError) {
+      console.error(
+        'Erro Supabase:',
+        supabaseError,
+      );
 
-          <p>
-            <strong>Telefone:</strong> ${phone}
-          </p>
+      return res.status(500).json({
+        message:
+          'Erro ao guardar a marcação.',
+      });
+    }
 
-          <p>
-            <strong>Email:</strong> ${email}
-          </p>
+    /*
+    |--------------------------------------------------------------------------
+    | 2. ENVIAR EMAIL
+    |--------------------------------------------------------------------------
+    */
 
-          <hr />
+    try {
+      const { error: emailError } =
+        await resend.emails.send({
+          from:
+            'Angel Fortes <onboarding@resend.dev>',
 
-          <h3>Marcação</h3>
+          to: process.env.BOOKING_EMAIL,
 
-          <p>
-            <strong>Serviço:</strong> ${service}
-          </p>
+          subject:
+            `Nova marcação — ${service}`,
 
-          <p>
-            <strong>Data:</strong> ${date}
-          </p>
+          html: `
+            <div
+              style="
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: auto;
+                color: #111;
+              "
+            >
 
-          <p>
-            <strong>Hora:</strong> ${time}
-          </p>
+              <h1>
+                Nova marcação
+              </h1>
 
-          ${
-            price
-              ? `<p><strong>Preço:</strong> ${price} €</p>`
-              : ''
-          }
+              <p>
+                Foi efetuada uma nova marcação
+                através do website da
+                Barbearia Angel Fortes.
+              </p>
 
-          <hr />
+              <hr />
 
-          <p style="color:#777;font-size:12px;">
-            Website Angel Fortes
-          </p>
-        </div>
-      `,
-    });
+              <h3>Cliente</h3>
+
+              <p>
+                <strong>Nome:</strong>
+                ${name}
+              </p>
+
+              <p>
+                <strong>Telefone:</strong>
+                ${phone}
+              </p>
+
+              <p>
+                <strong>Email:</strong>
+                ${email}
+              </p>
+
+              <hr />
+
+              <h3>Marcação</h3>
+
+              <p>
+                <strong>Serviço:</strong>
+                ${service}
+              </p>
+
+              <p>
+                <strong>Data:</strong>
+                ${date}
+              </p>
+
+              <p>
+                <strong>Hora:</strong>
+                ${time}
+              </p>
+
+              ${
+                price
+                  ? `
+                    <p>
+                      <strong>Preço:</strong>
+                      ${price} €
+                    </p>
+                  `
+                  : ''
+              }
+
+              <hr />
+
+              <p>
+                <strong>
+                  Lembrete após 20 dias:
+                </strong>
+
+                ${
+                  marketingConsent
+                    ? 'Autorizado'
+                    : 'Não autorizado'
+                }
+              </p>
+
+              <hr />
+
+              <p
+                style="
+                  color:#777;
+                  font-size:12px;
+                "
+              >
+                Website Angel Fortes
+              </p>
+
+            </div>
+          `,
+        });
+
+      if (emailError) {
+        console.error(
+          'Erro Resend:',
+          emailError,
+        );
+      }
+
+    } catch (emailError) {
+      /*
+       * A marcação já está guardada,
+       * portanto NÃO vamos apagar a
+       * marcação só porque o email falhou.
+       */
+
+      console.error(
+        'Erro ao enviar email:',
+        emailError,
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. SUCESSO
+    |--------------------------------------------------------------------------
+    */
 
     return res.status(200).json({
       success: true,
+      appointmentId: appointment.id,
     });
 
   } catch (error) {
-
-    console.error(error);
+    console.error(
+      'Erro booking API:',
+      error,
+    );
 
     return res.status(500).json({
-      message: 'Erro ao enviar email.',
+      message:
+        'Erro ao processar a marcação.',
     });
   }
 }

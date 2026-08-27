@@ -26,6 +26,7 @@ export default function BookingModal({
     name: '',
     phone: '',
     email: '',
+    marketingConsent: false,
   });
 
   const [sending, setSending] = useState(false);
@@ -112,6 +113,8 @@ export default function BookingModal({
       phone: form.phone.trim(),
       email: form.email.trim(),
 
+      marketingConsent: form.marketingConsent,
+
       status: 'Confirmado',
 
       createdAt: new Date().toISOString(),
@@ -137,6 +140,8 @@ export default function BookingModal({
             name: booking.name,
             phone: booking.phone,
             email: booking.email,
+
+            marketingConsent: booking.marketingConsent,
 
             service: booking.service,
 
@@ -508,6 +513,22 @@ export default function BookingModal({
                   : 'Confirmar marcação'}
               </button>
             </div>
+            <label className="booking-consent">
+              <input
+                type="checkbox"
+                checked={formData.marketingConsent || false}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    marketingConsent: e.target.checked,
+                  })
+                }
+              />
+
+              <span>
+                Quero receber um lembrete quando estiver na altura de voltar à barbearia.
+              </span>
+            </label>
           </form>
         )}
 
