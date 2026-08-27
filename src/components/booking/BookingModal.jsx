@@ -46,6 +46,7 @@ export default function BookingModal({
       name: '',
       phone: '',
       email: '',
+      marketingConsent: false,
     });
 
     setSending(false);
@@ -516,11 +517,11 @@ export default function BookingModal({
             <label className="booking-consent">
               <input
                 type="checkbox"
-                checked={formData.marketingConsent || false}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    marketingConsent: e.target.checked,
+                checked={form.marketingConsent}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    marketingConsent: event.target.checked,
                   })
                 }
               />
