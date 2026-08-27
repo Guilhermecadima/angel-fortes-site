@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       date,
       time,
       price,
-      marketingConsent = false,
+      marketingConsent = true,
     } = req.body;
 
     if (
