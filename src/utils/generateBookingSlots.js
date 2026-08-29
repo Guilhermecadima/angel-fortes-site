@@ -37,7 +37,7 @@ export function generateBookingSlots(duration) {
 
   const afternoon = generatePeriod(
     '15:00',
-    '19:30',
+    '16:40',
     duration
   );
 

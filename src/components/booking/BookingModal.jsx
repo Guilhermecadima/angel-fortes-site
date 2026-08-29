@@ -17,7 +17,7 @@ const OPENING_PERIODS = [
   },
   {
     start: '15:00',
-    end: '16:40',
+    end: '18:00',
   },
 ];
 
@@ -328,147 +328,117 @@ export default function BookingModal({
      SUBMIT
   ======================================================= */
 
-  const submit = async (
-    event,
-  ) => {
-    event.preventDefault();
+const submit = async (event) => {
+  event.preventDefault();
 
-    if (!selectedService) {
-      return;
-    }
+  if (!selectedService) {
+    return;
+  }
 
-    setSending(true);
-    setError('');
+  setSending(true);
+  setError('');
 
+  const booking = {
+    id: Date.now(),
 
-    const booking = {
-      id: Date.now(),
+    serviceId: selectedService.id,
+    service: selectedService.name,
+    price: selectedService.price,
+    duration: selectedService.duration,
 
-      serviceId:
-        selectedService.id,
+    date,
+    time,
 
-      service:
-        selectedService.name,
+    name: form.name.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim(),
 
-      price:
-        selectedService.price,
+    status: 'Confirmado',
 
-      duration:
-        selectedService.duration,
-
-      date,
-      time,
-
-      name:
-        form.name.trim(),
-
-      phone:
-        form.phone.trim(),
-
-      email:
-        form.email.trim(),
-
-      marketingConsent: true,
-
-      status: 'Confirmado',
-
-      createdAt:
-        new Date().toISOString(),
-    };
-
-
-    try {
-      /* ===============================================
-         EMAIL VIA VERCEL FUNCTION
-      =============================================== */
-
-      const response =
-        await fetch(
-          '/api/booking',
-          {
-            method: 'POST',
-
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
-
-            body: JSON.stringify({
-              name:
-                booking.name,
-
-              phone:
-                booking.phone,
-
-              email:
-                booking.email,
-
-              marketingConsent:
-                booking.marketingConsent,
-
-              service:
-                booking.service,
-
-              duration:
-                booking.duration,
-
-              date:
-                booking.date,
-
-              time:
-                booking.time,
-
-              price:
-                booking.price,
-            }),
-          },
-        );
-
-
-      if (!response.ok) {
-        const data =
-          await response
-            .json()
-            .catch(
-              () => null,
-            );
-
-        throw new Error(
-          data?.message ||
-            'Erro ao enviar a marcação.',
-        );
-      }
-
-
-      /* ===============================================
-         LOCAL STORAGE / ADMIN ATUAL
-      =============================================== */
-
-      saveBooking(
-        booking,
-      );
-
-
-      /* ===============================================
-         SUCESSO
-      =============================================== */
-
-      setStep(4);
-
-    } catch (err) {
-      console.error(
-        'Erro na marcação:',
-        err,
-      );
-
-      setError(
-        'Não foi possível enviar a marcação. Tenta novamente.',
-      );
-
-    } finally {
-      setSending(false);
-    }
+    createdAt: new Date().toISOString(),
   };
+
+  try {
+    /* =====================================================
+       GUARDA NO SUPABASE + ENVIA EMAIL
+       Tudo é tratado pelo /api/booking
+    ===================================================== */
+
+    const response = await fetch(
+      '/api/booking',
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json',
+        },
+
+        body: JSON.stringify({
+          name: booking.name,
+          phone: booking.phone,
+          email: booking.email,
+
+          serviceId: booking.serviceId,
+          service: booking.service,
+          duration: booking.duration,
+
+          date: booking.date,
+          time: booking.time,
+
+          price: booking.price,
+        }),
+      }
+    );
+
+    const data = await response
+      .json()
+      .catch(() => null);
+
+    if (!response.ok) {
+      console.error(
+        'ERRO /api/booking:',
+        response.status,
+        data
+      );
+
+      throw new Error(
+        data?.message ||
+          `Erro /api/booking: ${response.status}`
+      );
+    }
+
+    console.log(
+      'Marcação criada:',
+      data
+    );
+
+    /* =====================================================
+       LOCAL STORAGE / ADMIN ATUAL
+    ===================================================== */
+
+    saveBooking(booking);
+
+    /* =====================================================
+       SUCESSO
+    ===================================================== */
+
+    setStep(4);
+
+  } catch (err) {
+    console.error(
+      'Erro na marcação:',
+      err
+    );
+
+    setError(
+      err.message ||
+        'Não foi possível concluir a marcação.'
+    );
+
+  } finally {
+    setSending(false);
+  }
+};
 
 
   /* =========================================================

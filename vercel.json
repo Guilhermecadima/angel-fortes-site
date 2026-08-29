@@ -15,7 +15,7 @@
   ],
     "crons": [
     {
-      "path": "/api/cron/followup",
+      "path": "/api/send-reminders",
       "schedule": "0 10 * * *"
     }
   ]

@@ -2,8 +2,48 @@ import { Resend } from 'resend';
 import { supabaseAdmin } from './supabaseAdmin.js';
 
 const resend = new Resend(
-  process.env.RESEND_API_KEY,
+  process.env.RESEND_API_KEY
 );
+
+function normalizePhone(phone) {
+  const clean = String(phone || '')
+    .replace(/\s+/g, '')
+    .replace(/[()-]/g, '');
+
+  if (clean.startsWith('+')) {
+    return clean;
+  }
+
+  if (
+    clean.length === 9 &&
+    clean.startsWith('9')
+  ) {
+    return `+351${clean}`;
+  }
+
+  if (
+    clean.startsWith('351') &&
+    clean.length === 12
+  ) {
+    return `+${clean}`;
+  }
+
+  return clean;
+}
+
+function addDays(dateString, days) {
+  const date = new Date(
+    `${dateString}T12:00:00Z`
+  );
+
+  date.setUTCDate(
+    date.getUTCDate() + days
+  );
+
+  return date
+    .toISOString()
+    .split('T')[0];
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,11 +57,12 @@ export default async function handler(req, res) {
       name,
       phone,
       email,
+      serviceId,
       service,
+      duration,
       date,
       time,
       price,
-      marketingConsent = true,
     } = req.body;
 
     if (
@@ -37,11 +78,15 @@ export default async function handler(req, res) {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 1. GUARDAR MARCAÇÃO NO SUPABASE
-    |--------------------------------------------------------------------------
-    */
+    const phoneE164 =
+      normalizePhone(phone);
+
+    const reminderDueDate =
+      addDays(date, 20);
+
+    /* =========================================
+       1. GUARDAR NO SUPABASE
+    ========================================= */
 
     const {
       data: appointment,
@@ -50,191 +95,180 @@ export default async function handler(req, res) {
       .from('appointments')
       .insert({
         name,
-        phone,
         email,
+        phone,
 
         service,
-        price: price || null,
+
+        price:
+          price ?? null,
 
         date,
         time,
 
-        status: 'confirmed',
+        status:
+          'confirmed',
 
         marketing_consent:
-          Boolean(marketingConsent),
+          true,
 
-        followup_sent_at: null,
+        followup_sent_at:
+          null,
+
+        followup_opt_out:
+          false,
       })
-      .select()
+      .select('id')
       .single();
 
     if (supabaseError) {
       console.error(
         'Erro Supabase:',
-        supabaseError,
+        supabaseError
       );
 
       return res.status(500).json({
         message:
-          'Erro ao guardar a marcação.',
+          `Erro Supabase: ${supabaseError.message}`,
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 2. ENVIAR EMAIL
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================
+       2. ENVIAR EMAIL
+    ========================================= */
 
-    try {
-      const { error: emailError } =
-        await resend.emails.send({
-          from:
-            process.env.BOOKING_EMAIL_FROM,
+    const {
+      error: emailError,
+    } = await resend.emails.send({
+      from:
+        process.env.FOLLOWUP_EMAIL_FROM,
 
-          to: process.env.BOOKING_EMAIL,
+      to:
+        process.env.BOOKING_EMAIL,
 
-          subject:
-            `Nova marcação — ${service}`,
+      replyTo: email,
 
-          html: `
-            <div
-              style="
-                font-family: Arial, sans-serif;
-                max-width: 600px;
-                margin: auto;
-                color: #111;
-              "
-            >
+      subject:
+        `Nova marcação — ${service}`,
 
-              <h1>
-                Nova marcação
-              </h1>
+      html: `
+        <div
+          style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            color: #111;
+          "
+        >
+          <h1>Nova marcação</h1>
 
-              <p>
-                Foi efetuada uma nova marcação
-                através do website da
-                Barbearia Angel Fortes.
-              </p>
+          <p>
+            Foi efetuada uma nova marcação
+            através do website da
+            Barbearia Angel Fortes.
+          </p>
 
-              <hr />
+          <hr />
 
-              <h3>Cliente</h3>
+          <h3>Cliente</h3>
 
-              <p>
-                <strong>Nome:</strong>
-                ${name}
-              </p>
+          <p>
+            <strong>Nome:</strong>
+            ${name}
+          </p>
 
-              <p>
-                <strong>Telefone:</strong>
-                ${phone}
-              </p>
+          <p>
+            <strong>Telefone:</strong>
+            ${phone}
+          </p>
 
-              <p>
-                <strong>Email:</strong>
-                ${email}
-              </p>
+          <p>
+            <strong>Email:</strong>
+            ${email}
+          </p>
 
-              <hr />
+          <hr />
 
-              <h3>Marcação</h3>
+          <h3>Marcação</h3>
 
-              <p>
-                <strong>Serviço:</strong>
-                ${service}
-              </p>
+          <p>
+            <strong>Serviço:</strong>
+            ${service}
+          </p>
 
-              <p>
-                <strong>Data:</strong>
-                ${date}
-              </p>
+          ${
+            duration
+              ? `
+                <p>
+                  <strong>Duração:</strong>
+                  ${duration} minutos
+                </p>
+              `
+              : ''
+          }
 
-              <p>
-                <strong>Hora:</strong>
-                ${time}
-              </p>
+          <p>
+            <strong>Data:</strong>
+            ${date}
+          </p>
 
-              ${
-                price
-                  ? `
-                    <p>
-                      <strong>Preço:</strong>
-                      ${price} €
-                    </p>
-                  `
-                  : ''
-              }
+          <p>
+            <strong>Hora:</strong>
+            ${time}
+          </p>
 
-              <hr />
+          ${
+            price !== undefined &&
+            price !== null
+              ? `
+                <p>
+                  <strong>Preço:</strong>
+                  ${price} €
+                </p>
+              `
+              : ''
+          }
 
-              <p>
-                <strong>
-                  Lembrete após 20 dias:
-                </strong>
+          <hr />
 
-                ${
-                  marketingConsent
-                    ? 'Autorizado'
-                    : 'Não autorizado'
-                }
-              </p>
+          <p
+            style="
+              color:#777;
+              font-size:12px;
+            "
+          >
+            Website Angel Fortes
+          </p>
+        </div>
+      `,
+    });
 
-              <hr />
-
-              <p
-                style="
-                  color:#777;
-                  font-size:12px;
-                "
-              >
-                Website Angel Fortes
-              </p>
-
-            </div>
-          `,
-        });
-
-      if (emailError) {
-        console.error(
-          'Erro Resend:',
-          emailError,
-        );
-      }
-
-    } catch (emailError) {
-      /*
-       * A marcação já está guardada,
-       * portanto NÃO vamos apagar a
-       * marcação só porque o email falhou.
-       */
-
+    if (emailError) {
       console.error(
-        'Erro ao enviar email:',
-        emailError,
+        'Erro Resend:',
+        emailError
       );
-    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 3. SUCESSO
-    |--------------------------------------------------------------------------
-    */
+      /*
+       * Não apagamos a marcação:
+       * ela já ficou guardada.
+       */
+    }
 
     return res.status(200).json({
       success: true,
-      appointmentId: appointment.id,
+      bookingId: appointment.id,
     });
 
   } catch (error) {
     console.error(
       'Erro booking API:',
-      error,
+      error
     );
 
     return res.status(500).json({
       message:
+        error.message ||
         'Erro ao processar a marcação.',
     });
   }
