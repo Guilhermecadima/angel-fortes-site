@@ -4,129 +4,10 @@ import { services } from '../../data/services';
 
 import { formatCurrency } from '../../utils/currency';
 import { saveBooking } from '../../utils/storage';
-
-
-/* =========================================================
-   HORÁRIO DA BARBEARIA
-========================================================= */
-
-const OPENING_PERIODS = [
-  {
-    start: '10:00',
-    end: '13:00',
-  },
-  {
-    start: '15:00',
-    end: '18:00',
-  },
-];
-
-
-/*
- * De quanto em quanto tempo podem começar marcações.
- *
- * 10 significa:
- *
- * 10:00
- * 10:10
- * 10:20
- * 10:30
- * ...
- * A duração do serviço é usada para verificar
- * se cabe completamente no horário.
- */
-
-const SLOT_INTERVAL = 10;
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function getTomorrow() {
-  const date = new Date();
-
-  date.setDate(date.getDate() + 1);
-
-  return date.toISOString().split('T')[0];
-}
-
-
-function timeToMinutes(time) {
-  const [hours, minutes] = time
-    .split(':')
-    .map(Number);
-
-  return hours * 60 + minutes;
-}
-
-
-function minutesToTime(totalMinutes) {
-  const hours = Math.floor(
-    totalMinutes / 60,
-  );
-
-  const minutes =
-    totalMinutes % 60;
-
-  return `${String(hours).padStart(
-    2,
-    '0',
-  )}:${String(minutes).padStart(
-    2,
-    '0',
-  )}`;
-}
-
-
-/*
- * Gera os horários possíveis de acordo
- * com a duração do serviço.
- */
-
-function generateBookingSlots(duration) {
-  if (!duration || duration <= 0) {
-    return [];
-  }
-
-  const slots = [];
-
-  OPENING_PERIODS.forEach(
-    ({ start, end }) => {
-      const startMinutes =
-        timeToMinutes(start);
-
-      const endMinutes =
-        timeToMinutes(end);
-
-      for (
-        let current = startMinutes;
-        current + duration <= endMinutes;
-        current += SLOT_INTERVAL
-      ) {
-        slots.push(
-          minutesToTime(current),
-        );
-      }
-    },
-  );
-
-  return slots;
-}
-
-
-function isSunday(dateString) {
-  if (!dateString) {
-    return false;
-  }
-
-  const selectedDate = new Date(
-    `${dateString}T12:00:00`,
-  );
-
-  return selectedDate.getDay() === 0;
-}
-
+import {
+  getTodayInBookingTimeZone,
+  isSunday,
+} from '../../utils/bookingRules';
 
 /* =========================================================
    BOOKING MODAL
@@ -137,32 +18,25 @@ export default function BookingModal({
   initialServiceId,
   onClose,
 }) {
-  const [step, setStep] =
-    useState(1);
+  const [step, setStep] = useState(1);
 
-  const [serviceId, setServiceId] =
-    useState(null);
+  const [serviceId, setServiceId] = useState(null);
 
-  const [date, setDate] =
-    useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
 
-  const [time, setTime] =
-    useState('');
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
 
-  const [form, setForm] =
-    useState({
-      name: '',
-      phone: '',
-      email: '',
-      followupOptOut: false,
-    });
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    followupOptOut: false,
+  });
 
-  const [sending, setSending] =
-    useState(false);
-
-  const [error, setError] =
-    useState('');
-
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   /* =======================================================
      RESET QUANDO ABRE
@@ -172,13 +46,13 @@ export default function BookingModal({
     if (!open) return;
 
     setStep(1);
-
-    setServiceId(
-      initialServiceId || null,
-    );
+    setServiceId(initialServiceId || null);
 
     setDate('');
     setTime('');
+
+    setAvailableTimes([]);
+    setLoadingTimes(false);
 
     setForm({
       name: '',
@@ -189,42 +63,97 @@ export default function BookingModal({
 
     setSending(false);
     setError('');
-  }, [
-    open,
-    initialServiceId,
-  ]);
-
+  }, [open, initialServiceId]);
 
   /* =======================================================
      SERVIÇO SELECIONADO
   ======================================================= */
 
-  const selectedService =
-    useMemo(
-      () =>
-        services.find(
-          (service) =>
-            service.id === serviceId,
-        ),
-      [serviceId],
-    );
-
+  const selectedService = useMemo(
+    () =>
+      services.find(
+        (service) => service.id === serviceId,
+      ),
+    [serviceId],
+  );
 
   /* =======================================================
-     HORÁRIOS DINÂMICOS
+     DISPONIBILIDADE REAL
+
+     O backend trata de:
+     - regra das 8 horas
+     - horários ocupados
+     - duração dos serviços
+     - domingo fechado
   ======================================================= */
 
-  const availableTimes =
-    useMemo(() => {
-      if (!selectedService) {
-        return [];
+  useEffect(() => {
+    if (!open || !serviceId || !date) {
+      setAvailableTimes([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadAvailability = async () => {
+      setLoadingTimes(true);
+      setAvailableTimes([]);
+      setError('');
+
+      try {
+        const response = await fetch(
+          `/api/availability?date=${encodeURIComponent(
+            date,
+          )}&serviceId=${encodeURIComponent(serviceId)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+
+        const data = await response
+          .json()
+          .catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              'Erro ao verificar horários.',
+          );
+        }
+
+        if (controller.signal.aborted) return;
+
+        setAvailableTimes(
+          Array.isArray(data?.availableTimes)
+            ? data.availableTimes
+            : [],
+        );
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+
+        console.error(
+          'Erro disponibilidade:',
+          err,
+        );
+
+        setAvailableTimes([]);
+        setError(
+          err.message ||
+            'Não foi possível verificar os horários.',
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingTimes(false);
+        }
       }
+    };
 
-      return generateBookingSlots(
-        selectedService.duration,
-      );
-    }, [selectedService]);
+    loadAvailability();
 
+    return () => {
+      controller.abort();
+    };
+  }, [open, serviceId, date]);
 
   /*
    * Se trocar de serviço,
@@ -236,19 +165,12 @@ export default function BookingModal({
     setTime('');
   }, [serviceId]);
 
-
-  if (!open) return null;
-
-
   /* =======================================================
      NAVEGAÇÃO
   ======================================================= */
 
   const next = () => {
-    if (
-      step === 1 &&
-      !selectedService
-    ) {
+    if (step === 1 && !selectedService) {
       window.alert(
         'Escolhe primeiro um serviço.',
       );
@@ -256,11 +178,7 @@ export default function BookingModal({
       return;
     }
 
-
-    if (
-      step === 2 &&
-      (!date || !time)
-    ) {
+    if (step === 2 && (!date || !time)) {
       window.alert(
         'Escolhe uma data e um horário.',
       );
@@ -268,43 +186,24 @@ export default function BookingModal({
       return;
     }
 
-
-    setStep(
-      (value) => value + 1,
-    );
+    setStep((value) => value + 1);
   };
-
 
   const previous = () => {
-    setStep((value) =>
-      Math.max(
-        1,
-        value - 1,
-      ),
-    );
+    setStep((value) => Math.max(1, value - 1));
   };
-
 
   /* =======================================================
      DATA
   ======================================================= */
 
-  const handleDateChange = (
-    event,
-  ) => {
-    const nextDate =
-      event.target.value;
+  const handleDateChange = (event) => {
+    const nextDate = event.target.value;
 
-    /*
-     * Domingo fechado
-     */
-
-    if (
-      nextDate &&
-      isSunday(nextDate)
-    ) {
+    if (nextDate && isSunday(nextDate)) {
       setDate('');
       setTime('');
+      setAvailableTimes([]);
 
       window.alert(
         'A barbearia está fechada ao domingo.',
@@ -314,59 +213,51 @@ export default function BookingModal({
     }
 
     setDate(nextDate);
-
-    /*
-     * Ao trocar de dia,
-     * limpa a hora selecionada.
-     */
-
     setTime('');
+    setError('');
   };
-
 
   /* =======================================================
      SUBMIT
   ======================================================= */
 
-const submit = async (event) => {
-  event.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
 
-  if (!selectedService) {
-    return;
-  }
+    if (!selectedService) {
+      return;
+    }
 
-  setSending(true);
-  setError('');
+    setSending(true);
+    setError('');
 
-  const booking = {
-    id: Date.now(),
+    const booking = {
+      id: Date.now(),
 
-    serviceId: selectedService.id,
-    service: selectedService.name,
-    price: selectedService.price,
-    duration: selectedService.duration,
+      serviceId: selectedService.id,
+      service: selectedService.name,
+      price: selectedService.price,
+      duration: selectedService.duration,
 
-    date,
-    time,
+      date,
+      time,
 
-    name: form.name.trim(),
-    phone: form.phone.trim(),
-    email: form.email.trim(),
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
 
-    status: 'Confirmado',
+      status: 'Confirmado',
 
-    createdAt: new Date().toISOString(),
-  };
+      createdAt: new Date().toISOString(),
+    };
 
-  try {
-    /* =====================================================
-       GUARDA NO SUPABASE + ENVIA EMAIL
-       Tudo é tratado pelo /api/booking
-    ===================================================== */
+    try {
+      /* =====================================================
+         GUARDA NO SUPABASE + ENVIA EMAIL
+         Tudo é tratado pelo /api/booking
+      ===================================================== */
 
-    const response = await fetch(
-      '/api/booking',
-      {
+      const response = await fetch('/api/booking', {
         method: 'POST',
 
         headers: {
@@ -387,59 +278,91 @@ const submit = async (event) => {
 
           price: booking.price,
         }),
+      });
+
+      const data = await response
+        .json()
+        .catch(() => null);
+
+      if (!response.ok) {
+        console.error(
+          'ERRO /api/booking:',
+          response.status,
+          data,
+        );
+
+        /*
+         * Se o horário tiver sido ocupado entre a escolha
+         * e a confirmação, voltamos ao passo dos horários
+         * e atualizamos a disponibilidade.
+         */
+        if (response.status === 409) {
+          setTime('');
+          setStep(2);
+
+          try {
+            const availabilityResponse = await fetch(
+              `/api/availability?date=${encodeURIComponent(
+                date,
+              )}&serviceId=${encodeURIComponent(
+                booking.serviceId,
+              )}`,
+            );
+
+            const availabilityData =
+              await availabilityResponse
+                .json()
+                .catch(() => null);
+
+            if (availabilityResponse.ok) {
+              setAvailableTimes(
+                Array.isArray(
+                  availabilityData?.availableTimes,
+                )
+                  ? availabilityData.availableTimes
+                  : [],
+              );
+            }
+          } catch (availabilityError) {
+            console.error(
+              'Erro ao atualizar disponibilidade:',
+              availabilityError,
+            );
+          }
+        }
+
+        throw new Error(
+          data?.message ||
+            `Erro /api/booking: ${response.status}`,
+        );
       }
-    );
 
-    const data = await response
-      .json()
-      .catch(() => null);
+      console.log('Marcação criada:', data);
 
-    if (!response.ok) {
-      console.error(
-        'ERRO /api/booking:',
-        response.status,
-        data
+      /* =====================================================
+         LOCAL STORAGE / ADMIN ATUAL
+      ===================================================== */
+
+      saveBooking(booking);
+
+      /* =====================================================
+         SUCESSO
+      ===================================================== */
+
+      setStep(4);
+    } catch (err) {
+      console.error('Erro na marcação:', err);
+
+      setError(
+        err.message ||
+          'Não foi possível concluir a marcação.',
       );
-
-      throw new Error(
-        data?.message ||
-          `Erro /api/booking: ${response.status}`
-      );
+    } finally {
+      setSending(false);
     }
+  };
 
-    console.log(
-      'Marcação criada:',
-      data
-    );
-
-    /* =====================================================
-       LOCAL STORAGE / ADMIN ATUAL
-    ===================================================== */
-
-    saveBooking(booking);
-
-    /* =====================================================
-       SUCESSO
-    ===================================================== */
-
-    setStep(4);
-
-  } catch (err) {
-    console.error(
-      'Erro na marcação:',
-      err
-    );
-
-    setError(
-      err.message ||
-        'Não foi possível concluir a marcação.'
-    );
-
-  } finally {
-    setSending(false);
-  }
-};
-
+  if (!open) return null;
 
   /* =========================================================
      UI
@@ -449,22 +372,17 @@ const submit = async (event) => {
     <div
       className="modal-backdrop open"
       onMouseDown={(event) => {
-        if (
-          event.target ===
-          event.currentTarget
-        ) {
+        if (event.target === event.currentTarget) {
           onClose();
         }
       }}
     >
-
       <div
         className="booking-modal"
         role="dialog"
         aria-modal="true"
         aria-label="Agendamento"
       >
-
         <button
           className="close-btn modal-close"
           onClick={onClose}
@@ -473,13 +391,11 @@ const submit = async (event) => {
           ×
         </button>
 
-
         {/* =================================================
             HEADER
         ================================================= */}
 
         <div className="booking-head">
-
           <p className="eyebrow dark">
             Agendamento
           </p>
@@ -488,14 +404,10 @@ const submit = async (event) => {
             Marca a tua próxima visita.
           </h2>
 
-
           <div className="steps">
-
             <span
               className={
-                step === 1
-                  ? 'active'
-                  : ''
+                step === 1 ? 'active' : ''
               }
             >
               1 Serviço
@@ -503,9 +415,7 @@ const submit = async (event) => {
 
             <span
               className={
-                step === 2
-                  ? 'active'
-                  : ''
+                step === 2 ? 'active' : ''
               }
             >
               2 Horário
@@ -513,18 +423,13 @@ const submit = async (event) => {
 
             <span
               className={
-                step === 3
-                  ? 'active'
-                  : ''
+                step === 3 ? 'active' : ''
               }
             >
               3 Dados
             </span>
-
           </div>
-
         </div>
-
 
         {/* =================================================
             STEP 1 — SERVIÇO
@@ -532,61 +437,38 @@ const submit = async (event) => {
 
         {step === 1 && (
           <div className="booking-step active">
-
             <label>
               Escolhe o serviço
             </label>
 
-
             <div className="booking-services">
+              {services.map((service) => (
+                <button
+                  key={service.id}
+                  type="button"
+                  className={`booking-service ${
+                    serviceId === service.id
+                      ? 'selected'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    setServiceId(service.id)
+                  }
+                >
+                  <strong>
+                    {service.name}
+                  </strong>
 
-              {services.map(
-                (service) => (
-
-                  <button
-                    key={
-                      service.id
-                    }
-
-                    type="button"
-
-                    className={`booking-service ${
-                      serviceId ===
-                      service.id
-                        ? 'selected'
-                        : ''
-                    }`}
-
-                    onClick={() =>
-                      setServiceId(
-                        service.id,
-                      )
-                    }
-                  >
-
-                    <strong>
-                      {service.name}
-                    </strong>
-
-                    <span>
-                      {
-                        service.duration
-                      } min
-
-                      {' · '}
-
-                      {formatCurrency(
-                        service.price,
-                      )}
-                    </span>
-
-                  </button>
-
-                ),
-              )}
-
+                  <span>
+                    {service.duration} min
+                    {' · '}
+                    {formatCurrency(
+                      service.price,
+                    )}
+                  </span>
+                </button>
+              ))}
             </div>
-
 
             <button
               type="button"
@@ -595,10 +477,8 @@ const submit = async (event) => {
             >
               Continuar
             </button>
-
           </div>
         )}
-
 
         {/* =================================================
             STEP 2 — HORÁRIO
@@ -606,114 +486,100 @@ const submit = async (event) => {
 
         {step === 2 && (
           <div className="booking-step active">
-
             {selectedService && (
               <div
                 style={{
-                  marginBottom:
-                    '22px',
-
-                  padding:
-                    '14px 16px',
-
+                  marginBottom: '22px',
+                  padding: '14px 16px',
                   background:
                     'rgba(212, 175, 55, 0.12)',
-
                   border:
                     '1px solid rgba(212, 175, 55, 0.30)',
                 }}
               >
-
                 <strong>
-                  {
-                    selectedService.name
-                  }
+                  {selectedService.name}
                 </strong>
 
                 <div
                   style={{
-                    marginTop:
-                      '4px',
-
-                    fontSize:
-                      '13px',
-
-                    opacity:
-                      0.7,
+                    marginTop: '4px',
+                    fontSize: '13px',
+                    opacity: 0.7,
                   }}
                 >
-                  {
-                    selectedService.duration
-                  } minutos
-
+                  {selectedService.duration} minutos
                   {' · '}
-
                   {formatCurrency(
                     selectedService.price,
                   )}
                 </div>
-
               </div>
             )}
-
 
             <label htmlFor="booking-date">
               Escolhe a data
             </label>
 
-
             <input
               id="booking-date"
               type="date"
-
-              min={getTomorrow()}
-
+              min={getTodayInBookingTimeZone()}
               value={date}
-
-              onChange={
-                handleDateChange
-              }
-
+              onChange={handleDateChange}
               required
             />
-
 
             <label>
               Escolhe o horário
             </label>
 
+            {loadingTimes && (
+              <p>
+                A verificar horários...
+              </p>
+            )}
 
-            <div className="time-grid">
-
-              {availableTimes.map(
-                (slot) => (
-
-                  <button
-                    key={slot}
-
-                    type="button"
-
-                    className={`time-btn ${
-                      time === slot
-                        ? 'selected'
-                        : ''
-                    }`}
-
-                    onClick={() =>
-                      setTime(slot)
-                    }
-                  >
-                    {slot}
-                  </button>
-
-                ),
+            {!loadingTimes &&
+              date &&
+              availableTimes.length === 0 && (
+                <p>
+                  Não existem horários disponíveis para esta data.
+                </p>
               )}
 
+            <div className="time-grid">
+              {availableTimes.map((slot) => (
+                <button
+                  key={slot}
+                  type="button"
+                  className={`time-btn ${
+                    time === slot
+                      ? 'selected'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    setTime(slot)
+                  }
+                >
+                  {slot}
+                </button>
+              ))}
             </div>
 
+            {error && step === 2 && (
+              <p
+                style={{
+                  color: '#b42318',
+                  marginTop: '15px',
+                  fontSize: '14px',
+                }}
+              >
+                {error}
+              </p>
+            )}
 
             <div className="two-buttons">
-
               <button
                 type="button"
                 className="btn btn-outline"
@@ -722,20 +588,17 @@ const submit = async (event) => {
                 Voltar
               </button>
 
-
               <button
                 type="button"
                 className="btn btn-dark"
                 onClick={next}
+                disabled={loadingTimes}
               >
                 Continuar
               </button>
-
             </div>
-
           </div>
         )}
-
 
         {/* =================================================
             STEP 3 — DADOS
@@ -746,11 +609,8 @@ const submit = async (event) => {
             className="booking-step active"
             onSubmit={submit}
           >
-
             <div className="field-grid">
-
               <div>
-
                 <label htmlFor="customer-name">
                   Nome
                 </label>
@@ -758,34 +618,19 @@ const submit = async (event) => {
                 <input
                   id="customer-name"
                   type="text"
-
-                  value={
-                    form.name
-                  }
-
-                  onChange={(
-                    event,
-                  ) =>
+                  value={form.name}
+                  onChange={(event) =>
                     setForm({
                       ...form,
-
-                      name:
-                        event
-                          .target
-                          .value,
+                      name: event.target.value,
                     })
                   }
-
                   placeholder="O teu nome"
-
                   required
                 />
-
               </div>
 
-
               <div>
-
                 <label htmlFor="customer-phone">
                   Telemóvel
                 </label>
@@ -793,34 +638,19 @@ const submit = async (event) => {
                 <input
                   id="customer-phone"
                   type="tel"
-
-                  value={
-                    form.phone
-                  }
-
-                  onChange={(
-                    event,
-                  ) =>
+                  value={form.phone}
+                  onChange={(event) =>
                     setForm({
                       ...form,
-
-                      phone:
-                        event
-                          .target
-                          .value,
+                      phone: event.target.value,
                     })
                   }
-
                   placeholder="9xx xxx xxx"
-
                   required
                 />
-
               </div>
 
-
               <div className="wide">
-
                 <label htmlFor="customer-email">
                   Email
                 </label>
@@ -828,38 +658,22 @@ const submit = async (event) => {
                 <input
                   id="customer-email"
                   type="email"
-
-                  value={
-                    form.email
-                  }
-
-                  onChange={(
-                    event,
-                  ) =>
+                  value={form.email}
+                  onChange={(event) =>
                     setForm({
                       ...form,
-
-                      email:
-                        event
-                          .target
-                          .value,
+                      email: event.target.value,
                     })
                   }
-
                   placeholder="nome@email.com"
-
                   required
                 />
-
               </div>
-
             </div>
-
 
             {/* RESUMO */}
 
             <div className="booking-summary">
-
               <strong>
                 Resumo
               </strong>
@@ -867,18 +681,11 @@ const submit = async (event) => {
               <br />
 
               {selectedService?.name}
-
               {' · '}
-
-              {
-                selectedService?.duration
-              } min
-
+              {selectedService?.duration} min
               {' · '}
-
               {formatCurrency(
-                selectedService?.price ||
-                  0,
+                selectedService?.price || 0,
               )}
 
               <br />
@@ -886,72 +693,47 @@ const submit = async (event) => {
               {date
                 ? new Date(
                     `${date}T12:00:00`,
-                  ).toLocaleDateString(
-                    'pt-PT',
-                  )
+                  ).toLocaleDateString('pt-PT')
                 : ''}
 
               {' às '}
-
               {time}
-
             </div>
-
 
             {error && (
               <p
                 style={{
-                  color:
-                    '#b42318',
-
-                  marginTop:
-                    '15px',
-
-                  fontSize:
-                    '14px',
+                  color: '#b42318',
+                  marginTop: '15px',
+                  fontSize: '14px',
                 }}
               >
                 {error}
               </p>
             )}
 
-
             <div className="two-buttons">
-
               <button
                 type="button"
                 className="btn btn-outline"
-
-                onClick={
-                  previous
-                }
-
-                disabled={
-                  sending
-                }
+                onClick={previous}
+                disabled={sending}
               >
                 Voltar
               </button>
 
-
               <button
                 type="submit"
                 className="btn btn-dark"
-
-                disabled={
-                  sending
-                }
+                disabled={sending}
               >
                 {sending
                   ? 'A enviar...'
                   : 'Confirmar marcação'}
               </button>
-
             </div>
-
           </form>
         )}
-
 
         {/* =================================================
             STEP 4 — SUCESSO
@@ -959,7 +741,6 @@ const submit = async (event) => {
 
         {step === 4 && (
           <div className="booking-step active success-step">
-
             <div className="success-icon">
               ✓
             </div>
@@ -979,12 +760,9 @@ const submit = async (event) => {
             >
               Fechar
             </button>
-
           </div>
         )}
-
       </div>
-
     </div>
   );
 }
