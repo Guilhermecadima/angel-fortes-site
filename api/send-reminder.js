@@ -259,8 +259,10 @@ export default async function handler(req, res) {
               to:
                 normalizedPhone,
 
-              body:
-                'Angel Fortes: Ja passaram 20 dias desde a tua ultima visita. Quando quiseres, marca a tua proxima visita.',
+              body:`Já passaram 20 dias desde o seu último corte. ✂️
+Está na altura de renovar o visual e manter uma imagem sempre cuidada.
+Esperamos por si.
+Barbearia Angel Fortes`,
             });
 
         /* ===================================
