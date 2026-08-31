@@ -1,5 +1,8 @@
 import twilio from 'twilio';
-import { supabaseAdmin } from './supabaseAdmin.js';
+
+import {
+  supabaseAdmin,
+} from './supabaseAdmin.js';
 
 
 /* =========================================================
@@ -17,115 +20,139 @@ const twilioClient = twilio(
 ========================================================= */
 
 function normalizePhone(phone) {
+
   if (!phone) {
     return null;
   }
 
-  const clean = String(phone)
-    .replace(/\s+/g, '')
-    .replace(/[()-]/g, '');
+
+  const clean =
+    String(phone)
+      .replace(/\s+/g, '')
+      .replace(/[()-]/g, '');
 
 
   /*
    * Já vem com indicativo.
-   * Ex:
+   *
    * +351967040348
    */
-
-  if (clean.startsWith('+')) {
+  if (
+    clean.startsWith('+')
+  ) {
     return clean;
   }
 
 
   /*
    * Número português.
-   * Ex:
+   *
    * 967040348
    */
-
   if (
     clean.length === 9 &&
     clean.startsWith('9')
   ) {
+
     return `+351${clean}`;
+
   }
 
 
   /*
    * Indicativo sem +
-   * Ex:
+   *
    * 351967040348
    */
-
   if (
     clean.startsWith('351') &&
     clean.length === 12
   ) {
+
     return `+${clean}`;
+
   }
 
 
   return null;
+
 }
 
 
 /* =========================================================
    DATA DE HÁ 20 DIAS
-   TIMEZONE: PORTUGAL
+
+   Timezone:
+   Europe/Lisbon
 ========================================================= */
 
 function getCutoffDate() {
-  const formatter = new Intl.DateTimeFormat(
-    'en-CA',
-    {
-      timeZone: 'Europe/Lisbon',
 
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    },
-  );
+  const formatter =
+    new Intl.DateTimeFormat(
+      'en-CA',
+      {
+        timeZone:
+          'Europe/Lisbon',
 
+        year:
+          'numeric',
 
-  const parts = formatter.formatToParts(
-    new Date(),
-  );
+        month:
+          '2-digit',
 
-
-  const year = Number(
-    parts.find(
-      (part) => part.type === 'year',
-    ).value,
-  );
+        day:
+          '2-digit',
+      },
+    );
 
 
-  const month = Number(
-    parts.find(
-      (part) => part.type === 'month',
-    ).value,
-  );
+  const parts =
+    formatter.formatToParts(
+      new Date(),
+    );
 
 
-  const day = Number(
-    parts.find(
-      (part) => part.type === 'day',
-    ).value,
-  );
+  const year =
+    Number(
+      parts.find(
+        (part) =>
+          part.type === 'year',
+      )?.value,
+    );
 
 
-  const date = new Date(
-    Date.UTC(
-      year,
-      month - 1,
-      day,
-    ),
-  );
+  const month =
+    Number(
+      parts.find(
+        (part) =>
+          part.type === 'month',
+      )?.value,
+    );
+
+
+  const day =
+    Number(
+      parts.find(
+        (part) =>
+          part.type === 'day',
+      )?.value,
+    );
+
+
+  const date =
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        day,
+      ),
+    );
 
 
   /*
    * Retrocede 20 dias.
    */
-
   date.setUTCDate(
     date.getUTCDate() - 20,
   );
@@ -134,6 +161,7 @@ function getCutoffDate() {
   return date
     .toISOString()
     .slice(0, 10);
+
 }
 
 
@@ -160,10 +188,13 @@ export default async function handler(
       `Bearer ${process.env.CRON_SECRET}`
   ) {
 
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized',
-    });
+    return res
+      .status(401)
+      .json({
+        success: false,
+        message:
+          'Unauthorized',
+      });
 
   }
 
@@ -186,87 +217,85 @@ export default async function handler(
 
     /* =====================================================
        PROCURAR MARCAÇÕES ELEGÍVEIS
-    =====================================================
 
        Regras:
 
-       - data há 20 dias OU MAIS
+       - marcação há 20 dias ou mais
        - follow-up ainda não enviado
        - cliente não fez opt-out
        - cliente autorizou marketing
-       - marcação confirmed ou completed
-
-       IMPORTANTE:
-
-       Cada appointment é independente.
-
-       NÃO verificamos se o cliente
-       voltou entretanto.
+       - marcação confirmed/completed
     ===================================================== */
 
     const {
       data: appointments,
       error,
     } = await supabaseAdmin
+
       .from('appointments')
+
       .select(`
         id,
         name,
         email,
         phone,
         service,
-        date,
-        time,
+        appointment_date,
+        appointment_time,
         status,
-        marketing_consent,
         followup_sent_at,
         followup_opt_out
       `)
+
 
       /*
        * Ainda não recebeu
        * follow-up desta marcação.
        */
-
       .is(
         'followup_sent_at',
         null,
       )
 
+
       /*
        * Cliente não recusou
        * follow-ups.
        */
-
       .eq(
         'followup_opt_out',
         false,
       )
 
+
       /*
        * Cliente autorizou
        * comunicações.
+       *
+       * ATENÇÃO:
+       *
+       * Atualmente o booking.js
+       * grava false.
+       *
+       * Portanto enquanto não houver
+       * consentimento no formulário,
+       * nenhuma marcação passa este filtro.
        */
 
-      .eq(
-        'marketing_consent',
-        true,
-      )
 
       /*
        * Marcação de há
        * pelo menos 20 dias.
        */
-
       .lte(
-        'date',
+        'appointment_date',
         cutoffDate,
       )
+
 
       /*
        * Marcação válida.
        */
-
       .in(
         'status',
         [
@@ -275,23 +304,22 @@ export default async function handler(
         ],
       )
 
+
       /*
        * Mais antigas primeiro.
        */
-
       .order(
-        'date',
+        'appointment_date',
         {
           ascending: true,
         },
       )
 
+
       /*
        * Proteção para não processar
-       * quantidades absurdas numa
-       * única execução.
+       * demasiados registos numa execução.
        */
-
       .limit(100);
 
 
@@ -361,12 +389,11 @@ export default async function handler(
         /*
          * Não marcamos como enviado.
          *
-         * Assim podes corrigir
-         * o telefone no Supabase
-         * e o sistema tenta novamente.
+         * Assim pode ser corrigido
+         * no Supabase e tentado novamente.
          */
-
         continue;
+
       }
 
 
@@ -396,9 +423,12 @@ export default async function handler(
                 normalizedPhone,
 
               body:
-`Já passaram 20 dias desde o seu último corte. ✂️
+`Já passaram 20 dias desde a sua visita à Barbearia Angel Fortes. ✂️
+
 Está na altura de renovar o visual e manter uma imagem sempre cuidada.
+
 Esperamos por si.
+
 Barbearia Angel Fortes`,
 
             });
@@ -412,13 +442,15 @@ Barbearia Angel Fortes`,
 
 
         /* =================================================
-           MARCAR ESTE APPOINTMENT COMO ENVIADO
+           MARCAR FOLLOW-UP COMO ENVIADO
         ================================================= */
 
         const {
           error: updateError,
         } = await supabaseAdmin
+
           .from('appointments')
+
           .update({
 
             followup_sent_at:
@@ -426,6 +458,7 @@ Barbearia Angel Fortes`,
                 .toISOString(),
 
           })
+
           .eq(
             'id',
             appointment.id,
@@ -477,10 +510,9 @@ Barbearia Angel Fortes`,
          *
          * NÃO alteramos followup_sent_at.
          *
-         * Logo pode tentar novamente
+         * Assim pode tentar novamente
          * na próxima execução.
          */
-
         results.push({
 
           appointmentId:
@@ -490,7 +522,8 @@ Barbearia Angel Fortes`,
             'error',
 
           error:
-            smsError.message,
+            smsError?.message ||
+            'Erro Twilio',
 
         });
 
@@ -517,41 +550,45 @@ Barbearia Angel Fortes`,
       ).length;
 
 
-    return res.status(200).json({
+    return res
+      .status(200)
+      .json({
 
-      success: true,
+        success: true,
 
-      cutoffDate,
+        cutoffDate,
 
-      checked:
-        appointments?.length || 0,
+        checked:
+          appointments?.length || 0,
 
-      sent,
+        sent,
 
-      failed,
+        failed,
 
-      results,
+        results,
 
-    });
+      });
 
 
   } catch (error) {
 
     console.error(
-      'Erro send-reminders:',
+      'Erro send-reminder:',
       error,
     );
 
 
-    return res.status(500).json({
+    return res
+      .status(500)
+      .json({
 
-      success: false,
+        success: false,
 
-      message:
-        error.message ||
-        'Erro ao processar lembretes.',
+        message:
+          error?.message ||
+          'Erro ao processar lembretes.',
 
-    });
+      });
 
   }
 

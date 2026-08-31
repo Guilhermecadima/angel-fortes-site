@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { services } from '../../data/services';
 
@@ -21,24 +25,65 @@ export default function BookingModal({
   onClose,
 }) {
 
-  const [serviceId, setServiceId] = useState(null);
+  const [serviceId, setServiceId] =
+    useState(null);
 
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [date, setDate] =
+    useState('');
 
-  const [availableTimes, setAvailableTimes] = useState([]);
-  const [loadingTimes, setLoadingTimes] = useState(false);
+  /*
+   * Hora que o cliente gostaria
+   * idealmente de marcar.
+   */
+  const [
+    preferredTime,
+    setPreferredTime,
+  ] = useState('');
 
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-  });
 
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState('');
+  /*
+   * Hora efetivamente escolhida
+   * entre as sugestões.
+   */
+  const [time, setTime] =
+    useState('');
 
-  const [success, setSuccess] = useState(false);
+
+  /*
+   * Agora já NÃO guardamos todos
+   * os horários disponíveis.
+   *
+   * A API devolve apenas os melhores
+   * horários próximos da hora pedida.
+   */
+  const [
+    suggestedTimes,
+    setSuggestedTimes,
+  ] = useState([]);
+
+
+  const [
+    loadingTimes,
+    setLoadingTimes,
+  ] = useState(false);
+
+
+  const [form, setForm] =
+    useState({
+      name: '',
+      phone: '',
+      email: '',
+    });
+
+
+  const [sending, setSending] =
+    useState(false);
+
+  const [error, setError] =
+    useState('');
+
+  const [success, setSuccess] =
+    useState(false);
 
 
   /* =======================================================
@@ -49,13 +94,22 @@ export default function BookingModal({
 
     if (!open) return;
 
-    setServiceId(initialServiceId || null);
+
+    setServiceId(
+      initialServiceId || null,
+    );
+
 
     setDate('');
+
+    setPreferredTime('');
+
     setTime('');
 
-    setAvailableTimes([]);
+    setSuggestedTimes([]);
+
     setLoadingTimes(false);
+
 
     setForm({
       name: '',
@@ -63,138 +117,206 @@ export default function BookingModal({
       email: '',
     });
 
+
     setSending(false);
+
     setError('');
+
     setSuccess(false);
 
-  }, [open, initialServiceId]);
+  }, [
+    open,
+    initialServiceId,
+  ]);
 
 
   /* =======================================================
      SERVIÇO SELECIONADO
   ======================================================= */
 
-  const selectedService = useMemo(
-    () =>
-      services.find(
-        (service) => service.id === serviceId,
-      ),
-    [serviceId],
-  );
+  const selectedService =
+    useMemo(
+      () =>
+        services.find(
+          (service) =>
+            String(service.id) ===
+            String(serviceId),
+        ),
+      [serviceId],
+    );
 
 
   /* =======================================================
-     DISPONIBILIDADE
+     CARREGAR SUGESTÕES
 
-     Backend trata de:
-     - regra das 8 horas
-     - horários ocupados
-     - duração do serviço
-     - domingo
+     Só perguntamos à API quando temos:
+
+     - data
+     - serviço
+     - hora pretendida
+
+     Não mostramos a agenda inteira.
   ======================================================= */
 
   useEffect(() => {
 
-    if (!open || !serviceId || !date) {
+    if (
+      !open ||
+      !serviceId ||
+      !date ||
+      !preferredTime
+    ) {
 
-      setAvailableTimes([]);
+      setSuggestedTimes([]);
+
       return;
 
     }
 
-    const controller = new AbortController();
+
+    const controller =
+      new AbortController();
 
 
-    const loadAvailability = async () => {
+    const loadSuggestions =
+      async () => {
 
-      setLoadingTimes(true);
-      setAvailableTimes([]);
-      setError('');
+        setLoadingTimes(true);
 
-      try {
+        setSuggestedTimes([]);
 
-        const response = await fetch(
-          `/api/availability?date=${encodeURIComponent(
-            date,
-          )}&serviceId=${encodeURIComponent(
-            serviceId,
-          )}`,
-          {
-            signal: controller.signal,
-          },
-        );
+        setTime('');
+
+        setError('');
 
 
-        const data = await response
-          .json()
-          .catch(() => null);
+        try {
+
+          const params =
+            new URLSearchParams({
+              date,
+              serviceId:
+                String(serviceId),
+
+              preferredTime,
+            });
 
 
-        if (!response.ok) {
+          const response =
+            await fetch(
+              `/api/availability?${params.toString()}`,
+              {
+                signal:
+                  controller.signal,
+              },
+            );
 
-          throw new Error(
-            data?.message ||
-              'Erro ao verificar horários.',
+
+          const data =
+            await response
+              .json()
+              .catch(() => null);
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data?.message ||
+                'Erro ao verificar horários.',
+            );
+
+          }
+
+
+          if (
+            controller.signal.aborted
+          ) {
+            return;
+          }
+
+
+          setSuggestedTimes(
+            Array.isArray(
+              data?.suggestedTimes,
+            )
+              ? data.suggestedTimes
+              : [],
           );
 
+
+        } catch (err) {
+
+          if (
+            err.name ===
+            'AbortError'
+          ) {
+            return;
+          }
+
+
+          console.error(
+            'Erro disponibilidade:',
+            err,
+          );
+
+
+          setSuggestedTimes([]);
+
+
+          setError(
+            err.message ||
+              'Não foi possível verificar os horários.',
+          );
+
+
+        } finally {
+
+          if (
+            !controller.signal
+              .aborted
+          ) {
+
+            setLoadingTimes(false);
+
+          }
+
         }
 
-
-        if (controller.signal.aborted) return;
-
-
-        setAvailableTimes(
-          Array.isArray(data?.availableTimes)
-            ? data.availableTimes
-            : [],
-        );
-
-      } catch (err) {
-
-        if (err.name === 'AbortError') return;
+      };
 
 
-        console.error(
-          'Erro disponibilidade:',
-          err,
-        );
-
-
-        setAvailableTimes([]);
-
-        setError(
-          err.message ||
-            'Não foi possível verificar os horários.',
-        );
-
-      } finally {
-
-        if (!controller.signal.aborted) {
-          setLoadingTimes(false);
-        }
-
-      }
-
-    };
-
-
-    loadAvailability();
+    loadSuggestions();
 
 
     return () => {
+
       controller.abort();
+
     };
 
-  }, [open, serviceId, date]);
+  }, [
+    open,
+    serviceId,
+    date,
+    preferredTime,
+  ]);
 
 
-  /*
-   * Ao mudar de serviço,
-   * limpar hora selecionada.
-   */
+  /* =======================================================
+     SERVIÇO
+
+     Ao mudar de serviço:
+     - mantém a hora pretendida
+     - recalcula sugestões
+     - limpa horário escolhido
+  ======================================================= */
 
   useEffect(() => {
+
     setTime('');
+
+    setSuggestedTimes([]);
+
   }, [serviceId]);
 
 
@@ -202,284 +324,395 @@ export default function BookingModal({
      DATA
   ======================================================= */
 
-  const handleDateChange = (event) => {
+  const handleDateChange =
+    (event) => {
 
-    const nextDate = event.target.value;
+      const nextDate =
+        event.target.value;
 
 
-    if (nextDate && isSunday(nextDate)) {
+      if (
+        nextDate &&
+        isSunday(nextDate)
+      ) {
 
-      setDate('');
+        setDate('');
+
+        setTime('');
+
+        setSuggestedTimes([]);
+
+
+        window.alert(
+          'A barbearia está fechada ao domingo.',
+        );
+
+
+        return;
+
+      }
+
+
+      setDate(nextDate);
+
       setTime('');
-      setAvailableTimes([]);
 
-      window.alert(
-        'A barbearia está fechada ao domingo.',
-      );
+      setSuggestedTimes([]);
 
-      return;
+      setError('');
 
-    }
-
-
-    setDate(nextDate);
-    setTime('');
-    setError('');
-
-  };
+    };
 
 
   /* =======================================================
-     ATUALIZAR DISPONIBILIDADE
+     HORA PRETENDIDA
   ======================================================= */
 
-  const refreshAvailability = async () => {
+  const handlePreferredTimeChange =
+    (event) => {
 
-    if (!date || !serviceId) return;
-
-
-    try {
-
-      const response = await fetch(
-        `/api/availability?date=${encodeURIComponent(
-          date,
-        )}&serviceId=${encodeURIComponent(
-          serviceId,
-        )}`,
+      setPreferredTime(
+        event.target.value,
       );
 
+      setTime('');
 
-      const data = await response
-        .json()
-        .catch(() => null);
+      setSuggestedTimes([]);
+
+      setError('');
+
+    };
 
 
-      if (response.ok) {
+  /* =======================================================
+     ATUALIZAR SUGESTÕES
 
-        setAvailableTimes(
-          Array.isArray(data?.availableTimes)
-            ? data.availableTimes
-            : [],
+     Usado se alguém ocupar o horário
+     entre a consulta e o submit.
+  ======================================================= */
+
+  const refreshAvailability =
+    async () => {
+
+      if (
+        !date ||
+        !serviceId ||
+        !preferredTime
+      ) {
+        return;
+      }
+
+
+      try {
+
+        const params =
+          new URLSearchParams({
+            date,
+
+            serviceId:
+              String(serviceId),
+
+            preferredTime,
+          });
+
+
+        const response =
+          await fetch(
+            `/api/availability?${params.toString()}`,
+          );
+
+
+        const data =
+          await response
+            .json()
+            .catch(() => null);
+
+
+        if (response.ok) {
+
+          setSuggestedTimes(
+            Array.isArray(
+              data?.suggestedTimes,
+            )
+              ? data.suggestedTimes
+              : [],
+          );
+
+        }
+
+
+      } catch (err) {
+
+        console.error(
+          'Erro ao atualizar disponibilidade:',
+          err,
         );
 
       }
 
-    } catch (err) {
-
-      console.error(
-        'Erro ao atualizar disponibilidade:',
-        err,
-      );
-
-    }
-
-  };
+    };
 
 
   /* =======================================================
      SUBMIT
   ======================================================= */
 
-  const submit = async (event) => {
+  const submit =
+    async (event) => {
 
-    event.preventDefault();
-
-
-    if (!selectedService) {
-
-      setError(
-        'Escolhe primeiro um serviço.',
-      );
-
-      return;
-
-    }
+      event.preventDefault();
 
 
-    if (!date) {
+      if (!selectedService) {
 
-      setError(
-        'Escolhe uma data.',
-      );
-
-      return;
-
-    }
-
-
-    if (!time) {
-
-      setError(
-        'Escolhe um horário disponível.',
-      );
-
-      return;
-
-    }
-
-
-    if (
-      !form.name.trim() ||
-      !form.phone.trim() ||
-      !form.email.trim()
-    ) {
-
-      setError(
-        'Preenche todos os teus dados.',
-      );
-
-      return;
-
-    }
-
-
-    setSending(true);
-    setError('');
-
-
-    const booking = {
-
-      id: Date.now(),
-
-      serviceId: selectedService.id,
-      service: selectedService.name,
-
-      price: selectedService.price,
-      duration: selectedService.duration,
-
-      date,
-      time,
-
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-
-      status: 'Confirmado',
-
-      createdAt: new Date().toISOString(),
-
-    };
-
-
-    try {
-
-      /* =====================================================
-         SUPABASE + EMAIL
-      ===================================================== */
-
-      const response = await fetch('/api/booking', {
-
-        method: 'POST',
-
-        headers: {
-          'Content-Type': 'application/json',
-        },
-
-        body: JSON.stringify({
-
-          name: booking.name,
-          phone: booking.phone,
-          email: booking.email,
-
-          serviceId: booking.serviceId,
-          service: booking.service,
-          duration: booking.duration,
-
-          date: booking.date,
-          time: booking.time,
-
-          price: booking.price,
-
-        }),
-
-      });
-
-
-      const data = await response
-        .json()
-        .catch(() => null);
-
-
-      /* =====================================================
-         HORÁRIO OCUPADO ENTRETANTO
-      ===================================================== */
-
-      if (!response.ok) {
-
-        console.error(
-          'ERRO /api/booking:',
-          response.status,
-          data,
+        setError(
+          'Escolhe primeiro um serviço.',
         );
 
+        return;
 
-        if (response.status === 409) {
+      }
 
-          setTime('');
 
-          await refreshAvailability();
+      if (!date) {
+
+        setError(
+          'Escolhe uma data.',
+        );
+
+        return;
+
+      }
+
+
+      if (!preferredTime) {
+
+        setError(
+          'Indica a hora a que gostarias de marcar.',
+        );
+
+        return;
+
+      }
+
+
+      if (!time) {
+
+        setError(
+          'Escolhe um dos horários disponíveis.',
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !form.name.trim() ||
+        !form.phone.trim() ||
+        !form.email.trim()
+      ) {
+
+        setError(
+          'Preenche todos os teus dados.',
+        );
+
+        return;
+
+      }
+
+
+      setSending(true);
+
+      setError('');
+
+
+      const booking = {
+
+        id:
+          Date.now(),
+
+        serviceId:
+          selectedService.id,
+
+        service:
+          selectedService.name,
+
+        price:
+          selectedService.price,
+
+        duration:
+          selectedService.duration,
+
+        date,
+
+        time,
+
+        preferredTime,
+
+        name:
+          form.name.trim(),
+
+        phone:
+          form.phone.trim(),
+
+        email:
+          form.email.trim(),
+
+        status:
+          'Confirmado',
+
+        createdAt:
+          new Date()
+            .toISOString(),
+
+      };
+
+
+      try {
+
+        /* ===================================================
+           SUPABASE + EMAIL
+        =================================================== */
+
+        const response =
+          await fetch(
+            '/api/booking',
+            {
+
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+
+                  name:
+                    booking.name,
+
+                  phone:
+                    booking.phone,
+
+                  email:
+                    booking.email,
+
+                  serviceId:
+                    booking.serviceId,
+
+                  date:
+                    booking.date,
+
+                  time:
+                    booking.time,
+
+                }),
+
+            },
+          );
+
+
+        const data =
+          await response
+            .json()
+            .catch(() => null);
+
+
+        /* ===================================================
+           HORÁRIO FOI OCUPADO ENTRETANTO
+        =================================================== */
+
+        if (!response.ok) {
+
+          console.error(
+            'ERRO /api/booking:',
+            response.status,
+            data,
+          );
+
+
+          if (
+            response.status ===
+            409
+          ) {
+
+            setTime('');
+
+
+            await refreshAvailability();
+
+
+            throw new Error(
+              data?.message ||
+                'Esse horário acabou de ficar ocupado. Vê as novas sugestões.',
+            );
+
+          }
 
 
           throw new Error(
             data?.message ||
-              'Esse horário acabou de ficar ocupado. Escolhe outro horário.',
+              `Erro /api/booking: ${response.status}`,
           );
 
         }
 
 
-        throw new Error(
-          data?.message ||
-            `Erro /api/booking: ${response.status}`,
+        console.log(
+          'Marcação criada:',
+          data,
         );
+
+
+        /* ===================================================
+           LOCAL STORAGE / ADMIN
+        =================================================== */
+
+        saveBooking(
+          booking,
+        );
+
+
+        /* ===================================================
+           SUCESSO
+        =================================================== */
+
+        setSuccess(true);
+
+
+      } catch (err) {
+
+        console.error(
+          'Erro na marcação:',
+          err,
+        );
+
+
+        setError(
+          err.message ||
+            'Não foi possível concluir a marcação.',
+        );
+
+
+      } finally {
+
+        setSending(false);
 
       }
 
-
-      console.log(
-        'Marcação criada:',
-        data,
-      );
+    };
 
 
-      /* =====================================================
-         LOCAL STORAGE / ADMIN
-      ===================================================== */
+  /* =========================================================
+     CLOSED
+  ========================================================= */
 
-      saveBooking(booking);
-
-
-      /* =====================================================
-         SUCESSO
-      ===================================================== */
-
-      setSuccess(true);
-
-
-    } catch (err) {
-
-      console.error(
-        'Erro na marcação:',
-        err,
-      );
-
-
-      setError(
-        err.message ||
-          'Não foi possível concluir a marcação.',
-      );
-
-
-    } finally {
-
-      setSending(false);
-
-    }
-
-  };
-
-
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
 
   /* =========================================================
@@ -494,7 +727,10 @@ export default function BookingModal({
         className="modal-backdrop open"
         onMouseDown={(event) => {
 
-          if (event.target === event.currentTarget) {
+          if (
+            event.target ===
+            event.currentTarget
+          ) {
             onClose();
           }
 
@@ -524,12 +760,15 @@ export default function BookingModal({
               ✓
             </div>
 
+
             <h3>
               Marcação registada.
             </h3>
 
+
             <p>
-              A tua marcação foi enviada com sucesso.
+              A tua marcação foi enviada
+              com sucesso.
             </p>
 
 
@@ -539,19 +778,31 @@ export default function BookingModal({
                 {selectedService?.name}
               </strong>
 
-              <br />
 
-              {date
-                ? new Date(
-                    `${date}T12:00:00`,
-                  ).toLocaleDateString(
-                    'pt-PT',
-                  )
-                : ''}
+              <span>
 
-              {' às '}
+                {date
+                  ? new Date(
+                      `${date}T12:00:00`,
+                    ).toLocaleDateString(
+                      'pt-PT',
+                    )
+                  : ''}
 
-              {time}
+                {' · '}
+
+                {time}
+
+              </span>
+
+
+              <span>
+                {selectedService
+                  ? formatCurrency(
+                      selectedService.price,
+                    )
+                  : ''}
+              </span>
 
             </div>
 
@@ -576,7 +827,7 @@ export default function BookingModal({
 
 
   /* =========================================================
-     FORMULÁRIO ÚNICO
+     FORMULÁRIO
   ========================================================= */
 
   return (
@@ -585,7 +836,10 @@ export default function BookingModal({
       className="modal-backdrop open"
       onMouseDown={(event) => {
 
-        if (event.target === event.currentTarget) {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
           onClose();
         }
 
@@ -617,19 +871,20 @@ export default function BookingModal({
             Agendamento
           </p>
 
+
           <h2>
             Marca a tua próxima visita.
           </h2>
 
+
           <p className="booking-head-description">
-            Escolhe o serviço, a data e o horário
-            que preferes.
+            Diz-nos quando gostarias de vir.
+            Mostramos-te apenas os melhores
+            horários disponíveis próximos.
           </p>
 
         </div>
 
-
-        {/* FORM */}
 
         <form
           className="booking-single-form"
@@ -648,27 +903,35 @@ export default function BookingModal({
                 Data da marcação
               </label>
 
+
               <input
                 id="booking-date"
                 type="date"
-                min={getTodayInBookingTimeZone()}
+                min={
+                  getTodayInBookingTimeZone()
+                }
                 value={date}
-                onChange={handleDateChange}
+                onChange={
+                  handleDateChange
+                }
                 required
               />
 
             </div>
 
 
-            <div className="booking-field">
+            <div className="booking-field booking-service-field">
 
               <label htmlFor="booking-service">
-                Serviço
+                Escolha o corte
               </label>
+
 
               <select
                 id="booking-service"
-                value={serviceId || ''}
+                value={
+                  serviceId || ''
+                }
                 onChange={(event) =>
                   setServiceId(
                     event.target.value,
@@ -681,22 +944,27 @@ export default function BookingModal({
                   Escolhe um serviço
                 </option>
 
-                {services.map((service) => (
 
-                  <option
-                    key={service.id}
-                    value={service.id}
-                  >
-                    {service.name}
-                    {' — '}
-                    {service.duration} min
-                    {' — '}
-                    {formatCurrency(
-                      service.price,
-                    )}
-                  </option>
+                {services.map(
+                  (service) => (
 
-                ))}
+                    <option
+                      key={
+                        service.id
+                      }
+                      value={
+                        service.id
+                      }
+                    >
+                      {service.name}
+                      {' — '}
+                      {formatCurrency(
+                        service.price,
+                      )}
+                    </option>
+
+                  ),
+                )}
 
               </select>
 
@@ -706,7 +974,45 @@ export default function BookingModal({
 
 
           {/* ===============================================
-              HORÁRIOS
+              HORA PRETENDIDA
+          =============================================== */}
+
+          <div className="preferred-time-block">
+
+            <div className="booking-field preferred-time-field">
+
+              <label htmlFor="preferred-time">
+                A que horas gostarias de marcar?
+              </label>
+
+
+              <input
+                id="preferred-time"
+                type="time"
+                step="600"
+                value={
+                  preferredTime
+                }
+                onChange={
+                  handlePreferredTimeChange
+                }
+                required
+              />
+
+
+              <small>
+                Não precisa de ser exatamente
+                essa hora. Vamos procurar os
+                melhores horários próximos.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          {/* ===============================================
+              SUGESTÕES
           =============================================== */}
 
           <div className="booking-times-section">
@@ -714,14 +1020,16 @@ export default function BookingModal({
             <div className="booking-times-header">
 
               <label>
-                Horário
+                Horários disponíveis próximos
               </label>
+
 
               {selectedService && (
 
                 <span>
-                  {selectedService.duration} min
-                  {' · '}
+                  {selectedService.duration}
+                  {' min · '}
+
                   {formatCurrency(
                     selectedService.price,
                   )}
@@ -732,48 +1040,125 @@ export default function BookingModal({
             </div>
 
 
-            {!date || !selectedService ? (
+            {!date ||
+            !selectedService ? (
 
               <div className="booking-times-placeholder">
-                Escolhe primeiro a data e o serviço
-                para veres os horários disponíveis.
+                Escolhe primeiro a data
+                e o corte.
+              </div>
+
+            ) : !preferredTime ? (
+
+              <div className="booking-times-placeholder">
+                Diz-nos a que horas
+                gostarias de marcar.
               </div>
 
             ) : loadingTimes ? (
 
               <div className="booking-times-placeholder">
-                A verificar horários...
+                A procurar os melhores
+                horários...
               </div>
 
-            ) : availableTimes.length === 0 ? (
+            ) : suggestedTimes.length ===
+              0 ? (
 
               <div className="booking-times-placeholder">
-                Não existem horários disponíveis
-                para esta data.
+                Não encontrámos horários
+                disponíveis próximos desta
+                hora. Experimenta outra hora.
               </div>
 
             ) : (
 
-              <div className="time-grid">
+              <div className="time-grid time-grid-suggestions">
 
-                {availableTimes.map((slot) => (
+                {suggestedTimes.map(
+                  (suggestion) => {
 
-                  <button
-                    key={slot}
-                    type="button"
-                    className={`time-btn ${
-                      time === slot
-                        ? 'selected'
-                        : ''
-                    }`}
-                    onClick={() =>
-                      setTime(slot)
+                    const isSelected =
+                      time ===
+                      suggestion.time;
+
+
+                    let label =
+                      'Disponível';
+
+
+                    if (
+                      suggestion.recommended &&
+                      suggestion.requested
+                    ) {
+
+                      label =
+                        'A tua hora · recomendada';
+
+                    } else if (
+                      suggestion.recommended
+                    ) {
+
+                      label =
+                        'Melhor encaixe';
+
+                    } else if (
+                      suggestion.requested
+                    ) {
+
+                      label =
+                        'A tua hora';
+
                     }
-                  >
-                    {slot}
-                  </button>
 
-                ))}
+
+                    return (
+
+                      <button
+                        key={
+                          suggestion.time
+                        }
+                        type="button"
+                        className={[
+                          'time-btn',
+                          'suggestion-time-btn',
+
+                          isSelected
+                            ? 'selected'
+                            : '',
+
+                          suggestion.recommended
+                            ? 'recommended'
+                            : '',
+
+                          suggestion.requested
+                            ? 'requested'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onClick={() =>
+                          setTime(
+                            suggestion.time,
+                          )
+                        }
+                      >
+
+                        <strong>
+                          {suggestion.time}
+                        </strong>
+
+
+                        <small>
+                          {label}
+                        </small>
+
+                      </button>
+
+                    );
+
+                  },
+                )}
 
               </div>
 
@@ -794,6 +1179,7 @@ export default function BookingModal({
                 Nome
               </label>
 
+
               <input
                 id="customer-name"
                 type="text"
@@ -801,7 +1187,10 @@ export default function BookingModal({
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    name: event.target.value,
+
+                    name:
+                      event.target
+                        .value,
                   })
                 }
                 placeholder="O teu nome"
@@ -818,6 +1207,7 @@ export default function BookingModal({
                 Telemóvel
               </label>
 
+
               <input
                 id="customer-phone"
                 type="tel"
@@ -825,7 +1215,10 @@ export default function BookingModal({
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    phone: event.target.value,
+
+                    phone:
+                      event.target
+                        .value,
                   })
                 }
                 placeholder="9xx xxx xxx"
@@ -842,6 +1235,7 @@ export default function BookingModal({
                 Email
               </label>
 
+
               <input
                 id="customer-email"
                 type="email"
@@ -849,7 +1243,10 @@ export default function BookingModal({
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    email: event.target.value,
+
+                    email:
+                      event.target
+                        .value,
                   })
                 }
                 placeholder="nome@email.com"
@@ -866,52 +1263,53 @@ export default function BookingModal({
               RESUMO
           =============================================== */}
 
-          {selectedService && date && time && (
+          {selectedService &&
+            date &&
+            time && (
 
-            <div className="booking-summary">
+              <div className="booking-summary">
 
-              <strong>
-                Resumo da marcação
-              </strong>
+                <strong>
+                  Resumo da marcação
+                </strong>
 
-              <span>
-                {selectedService.name}
-              </span>
 
-              <span>
-                {new Date(
-                  `${date}T12:00:00`,
-                ).toLocaleDateString(
-                  'pt-PT',
-                )}
+                <span>
+                  {selectedService.name}
+                </span>
 
-                {' · '}
 
-                {time}
-              </span>
+                <span>
 
-              <span>
-                {formatCurrency(
-                  selectedService.price,
-                )}
-              </span>
+                  {new Date(
+                    `${date}T12:00:00`,
+                  ).toLocaleDateString(
+                    'pt-PT',
+                  )}
 
-            </div>
+                  {' · '}
 
-          )}
+                  {time}
+
+                </span>
+
+
+                <span>
+                  {formatCurrency(
+                    selectedService.price,
+                  )}
+                </span>
+
+              </div>
+
+            )}
 
 
           {/* ERROR */}
 
           {error && (
 
-            <p
-              style={{
-                color: '#b42318',
-                marginTop: '15px',
-                fontSize: '14px',
-              }}
-            >
+            <p className="booking-error">
               {error}
             </p>
 
@@ -925,7 +1323,8 @@ export default function BookingModal({
             className="btn btn-dark full booking-submit"
             disabled={
               sending ||
-              loadingTimes
+              loadingTimes ||
+              !time
             }
           >
 
