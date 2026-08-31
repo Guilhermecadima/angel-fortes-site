@@ -1356,3 +1356,42 @@ body {
   min-width: 0;
   max-width: 100%;
 }
+
+/* ==========================================
+   CENTER DATE + TIME VALUES
+========================================== */
+
+.native-picker-wrap input[type="date"],
+.native-picker-wrap input[type="time"] {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 500;
+}
+
+/* Safari / iPhone */
+.native-picker-wrap input[type="date"]::-webkit-date-and-time-value,
+.native-picker-wrap input[type="time"]::-webkit-date-and-time-value {
+  text-align: center;
+  width: 100%;
+}
+
+/* Garante que o conteúdo interno também fica centrado */
+.native-picker-wrap input[type="date"]::-webkit-datetime-edit,
+.native-picker-wrap input[type="time"]::-webkit-datetime-edit {
+  width: 100%;
+  text-align: center;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .native-picker-wrap input[type="date"],
+  .native-picker-wrap input[type="time"] {
+    text-align: center;
+    font-size: 26px;
+  }
+
+  .native-picker-wrap input[type="date"]::-webkit-date-and-time-value,
+  .native-picker-wrap input[type="time"]::-webkit-date-and-time-value {
+    text-align: center;
+  }
+}
