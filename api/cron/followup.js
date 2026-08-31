@@ -121,10 +121,10 @@ export default async function handler(req, res) {
       )
 
       // Exatamente há 20 dias
-      .eq(
-        'date',
-        targetDate,
-      );
+    .lte(
+      'date',
+      targetDate,
+    );
 
 
     if (error) {

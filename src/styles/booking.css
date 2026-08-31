@@ -48,3 +48,226 @@
 .success-icon {
   color: #17130e;
 }
+
+/* ==========================================
+   SINGLE PAGE BOOKING
+========================================== */
+
+.booking-modal-single {
+  width: min(820px, calc(100vw - 32px));
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.booking-head-description {
+  margin: -8px 0 26px;
+
+  color: #777;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.booking-single-form {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+
+/* DATA + SERVIÇO */
+
+.booking-single-top {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 16px;
+}
+
+.booking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.booking-field label,
+.booking-times-header label {
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.booking-field input,
+.booking-field select {
+  width: 100%;
+
+  min-height: 52px;
+
+  padding: 0 15px;
+
+  background: #fff;
+
+  border: 1px solid #d8d1c5;
+
+  color: #111;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.booking-field input:focus,
+.booking-field select:focus {
+  border-color: #d4af37;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(212, 175, 55, 0.12);
+}
+
+
+/* HORÁRIOS */
+
+.booking-times-section {
+  padding-top: 4px;
+}
+
+.booking-times-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 12px;
+}
+
+.booking-times-header span {
+  color: #81755d;
+
+  font-size: 12px;
+}
+
+.booking-times-placeholder {
+  padding: 18px;
+
+  background: #f6f3ec;
+
+  border: 1px dashed #d8d1c5;
+
+  color: #777;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+
+/* DADOS DO CLIENTE */
+
+.booking-client-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 16px;
+}
+
+.booking-field-full {
+  grid-column: 1 / -1;
+}
+
+
+/* RESUMO */
+
+.booking-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+
+  gap: 5px 20px;
+
+  padding: 18px 20px;
+
+  background:
+    rgba(212, 175, 55, 0.10);
+
+  border:
+    1px solid rgba(212, 175, 55, 0.26);
+}
+
+.booking-summary strong {
+  grid-column: 1 / -1;
+
+  margin-bottom: 6px;
+}
+
+.booking-summary span {
+  font-size: 13px;
+}
+
+.booking-summary span:last-child {
+  grid-column: 2;
+  grid-row: 2 / 4;
+
+  align-self: center;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+
+/* BOTÃO */
+
+.booking-submit {
+  min-height: 55px;
+
+  margin-top: 2px;
+
+  font-size: 14px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 650px) {
+
+  .booking-modal-single {
+    width: calc(100vw - 20px);
+
+    max-height: 95vh;
+
+    padding: 26px 18px;
+  }
+
+  .booking-single-top {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-client-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-field-full {
+    grid-column: auto;
+  }
+
+  .booking-times-header {
+    align-items: flex-start;
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+  .booking-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-summary span:last-child {
+    grid-column: auto;
+    grid-row: auto;
+
+    margin-top: 4px;
+  }
+
+}
