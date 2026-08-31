@@ -1276,3 +1276,83 @@ body {
     margin: 0;
   }
 }
+
+/* ==========================================
+   FIX IOS DATE / TIME INPUTS
+========================================== */
+
+.native-picker-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 16px;
+
+  background: #fff;
+
+  border: 1px solid #d8d1c5;
+
+  box-sizing: border-box;
+
+  overflow: hidden;
+}
+
+.native-picker-wrap input[type="date"],
+.native-picker-wrap input[type="time"] {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  box-sizing: border-box;
+
+  font: inherit;
+  color: #111;
+}
+
+
+/* IOS / SAFARI */
+
+.native-picker-wrap input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.native-picker-wrap input::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.native-picker-wrap input::-webkit-calendar-picker-indicator {
+  margin: 0;
+}
+
+
+/* GARANTE QUE O CARD DA HORA TAMBÉM NÃO EXPANDE */
+
+.booking-preferred-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  box-sizing: border-box;
+}
+
+.booking-preferred-card > * {
+  min-width: 0;
+  max-width: 100%;
+}

@@ -148,14 +148,6 @@ export default function BookingModal({
 
   /* =======================================================
      CARREGAR SUGESTÕES
-
-     Só perguntamos à API quando temos:
-
-     - data
-     - serviço
-     - hora pretendida
-
-     Não mostramos a agenda inteira.
   ======================================================= */
 
   useEffect(() => {
@@ -304,11 +296,6 @@ export default function BookingModal({
 
   /* =======================================================
      SERVIÇO
-
-     Ao mudar de serviço:
-     - mantém a hora pretendida
-     - recalcula sugestões
-     - limpa horário escolhido
   ======================================================= */
 
   useEffect(() => {
@@ -386,9 +373,6 @@ export default function BookingModal({
 
   /* =======================================================
      ATUALIZAR SUGESTÕES
-
-     Usado se alguém ocupar o horário
-     entre a consulta e o submit.
   ======================================================= */
 
   const refreshAvailability =
@@ -571,10 +555,6 @@ export default function BookingModal({
 
       try {
 
-        /* ===================================================
-           SUPABASE + EMAIL
-        =================================================== */
-
         const response =
           await fetch(
             '/api/booking',
@@ -621,10 +601,6 @@ export default function BookingModal({
             .catch(() => null);
 
 
-        /* ===================================================
-           HORÁRIO FOI OCUPADO ENTRETANTO
-        =================================================== */
-
         if (!response.ok) {
 
           console.error(
@@ -667,18 +643,10 @@ export default function BookingModal({
         );
 
 
-        /* ===================================================
-           LOCAL STORAGE / ADMIN
-        =================================================== */
-
         saveBooking(
           booking,
         );
 
-
-        /* ===================================================
-           SUCESSO
-        =================================================== */
 
         setSuccess(true);
 
@@ -891,9 +859,7 @@ export default function BookingModal({
           onSubmit={submit}
         >
 
-          {/* ===============================================
-              DATA + SERVIÇO
-          =============================================== */}
+          {/* DATA + SERVIÇO */}
 
           <div className="booking-single-top">
 
@@ -904,18 +870,23 @@ export default function BookingModal({
               </label>
 
 
-              <input
-                id="booking-date"
-                type="date"
-                min={
-                  getTodayInBookingTimeZone()
-                }
-                value={date}
-                onChange={
-                  handleDateChange
-                }
-                required
-              />
+              {/* FIX IOS */}
+              <div className="native-picker-wrap">
+
+                <input
+                  id="booking-date"
+                  type="date"
+                  min={
+                    getTodayInBookingTimeZone()
+                  }
+                  value={date}
+                  onChange={
+                    handleDateChange
+                  }
+                  required
+                />
+
+              </div>
 
             </div>
 
@@ -973,9 +944,7 @@ export default function BookingModal({
           </div>
 
 
-          {/* ===============================================
-              HORA PRETENDIDA
-          =============================================== */}
+          {/* HORA PRETENDIDA */}
 
           <div className="preferred-time-block">
 
@@ -986,18 +955,23 @@ export default function BookingModal({
               </label>
 
 
-              <input
-                id="preferred-time"
-                type="time"
-                step="600"
-                value={
-                  preferredTime
-                }
-                onChange={
-                  handlePreferredTimeChange
-                }
-                required
-              />
+              {/* FIX IOS */}
+              <div className="native-picker-wrap">
+
+                <input
+                  id="preferred-time"
+                  type="time"
+                  step="600"
+                  value={
+                    preferredTime
+                  }
+                  onChange={
+                    handlePreferredTimeChange
+                  }
+                  required
+                />
+
+              </div>
 
 
               <small>
@@ -1011,9 +985,7 @@ export default function BookingModal({
           </div>
 
 
-          {/* ===============================================
-              SUGESTÕES
-          =============================================== */}
+          {/* SUGESTÕES */}
 
           <div className="booking-times-section">
 
@@ -1167,9 +1139,7 @@ export default function BookingModal({
           </div>
 
 
-          {/* ===============================================
-              CLIENTE
-          =============================================== */}
+          {/* CLIENTE */}
 
           <div className="booking-client-grid">
 
@@ -1259,9 +1229,7 @@ export default function BookingModal({
           </div>
 
 
-          {/* ===============================================
-              RESUMO
-          =============================================== */}
+          {/* RESUMO */}
 
           {selectedService &&
             date &&
@@ -1305,8 +1273,6 @@ export default function BookingModal({
             )}
 
 
-          {/* ERROR */}
-
           {error && (
 
             <p className="booking-error">
@@ -1315,8 +1281,6 @@ export default function BookingModal({
 
           )}
 
-
-          {/* SUBMIT */}
 
           <button
             type="submit"
