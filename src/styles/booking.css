@@ -757,3 +757,436 @@
   }
 
 }
+
+/* ==========================================
+   BOOKING — MOBILE FIX REAL
+========================================== */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+
+/* wrapper geral do booking */
+.booking-modal,
+.booking-modal-single,
+.booking-section,
+.booking-panel,
+.booking-wrapper {
+  max-width: 100%;
+}
+
+
+/* se estiveres a usar modal */
+.booking-modal-single {
+  width: min(100vw - 20px, 820px);
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+
+/* header */
+.booking-head,
+.booking-section-header {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.booking-head h2,
+.booking-section-header h2 {
+  max-width: 100%;
+  margin: 10px 0 18px;
+  line-height: 0.95;
+  font-size: clamp(36px, 12vw, 62px);
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.booking-head-description,
+.booking-section-header p {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 1.55;
+  color: #7a7a7a;
+}
+
+
+/* forms */
+.booking-single-form,
+.booking-form {
+  width: 100%;
+  min-width: 0;
+}
+
+.booking-single-top,
+.booking-client-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.booking-field,
+.booking-field-full,
+.booking-times-section,
+.booking-preference-box,
+.booking-preference-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.booking-field input,
+.booking-field select,
+.booking-field textarea,
+.booking-times-section input,
+.booking-preference-box input,
+.booking-preference-card input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  padding: 0 14px;
+  font-size: 16px;
+  border: 1px solid #d6cfc3;
+  background: #fff;
+  color: #111;
+}
+
+.booking-field label,
+.booking-times-header label,
+.booking-preference-box label,
+.booking-preference-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+
+/* caixa da preferência de hora */
+.booking-preference-box,
+.booking-preference-card {
+  padding: 18px 16px;
+  background: #faf8f2;
+  border: 1px solid #eadfb8;
+}
+
+.booking-preference-box p,
+.booking-preference-card p {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #777;
+}
+
+
+/* horários */
+.booking-times-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.booking-times-header span {
+  font-size: 12px;
+  color: #8a8069;
+}
+
+.booking-times-placeholder {
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #7b7b7b;
+  border: 1px dashed #d9d1c3;
+  background: #fbf8f2;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.time-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 10px;
+  font-size: 15px;
+}
+
+
+/* resumo */
+.booking-summary {
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: 1fr;
+}
+
+.booking-summary span:last-child {
+  grid-column: auto;
+  grid-row: auto;
+  margin-top: 6px;
+}
+
+
+/* botão */
+.booking-submit,
+.booking-single-form .btn,
+.booking-form .btn {
+  width: 100%;
+  min-height: 54px;
+  font-size: 15px;
+}
+
+
+/* botão fechar modal */
+.close-btn.modal-close {
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+}
+
+
+/* MOBILE */
+@media (max-width: 650px) {
+/* BOOKING MOBILE */
+
+.modal-backdrop {
+  padding: 8px;
+  align-items: center;
+}
+
+.booking-modal {
+  width: 100%;
+  max-width: 100%;
+  max-height: 95vh;
+
+  padding: 24px 16px 20px;
+
+  border-radius: 0;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+
+/* FECHAR */
+
+.modal-close {
+  top: 10px;
+  right: 12px;
+}
+
+
+/* CABEÇALHO */
+
+.booking-head {
+  padding-right: 32px;
+}
+
+.booking-head .eyebrow {
+  margin-bottom: 6px;
+}
+
+.booking-head h2 {
+  font-size: 32px;
+  line-height: 0.98;
+
+  margin: 5px 0 18px;
+
+  max-width: 280px;
+}
+
+
+/* PASSOS */
+
+.steps {
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+
+  gap: 6px;
+
+  font-size: 10px;
+
+  padding-bottom: 12px;
+}
+
+.steps span {
+  white-space: nowrap;
+}
+
+
+/* CONTEÚDO */
+
+.booking-step {
+  padding-top: 18px;
+}
+
+.booking-step > label,
+.field-grid label {
+  margin: 12px 0 7px;
+
+  font-size: 11px;
+
+  letter-spacing: 0.04em;
+}
+
+
+/* SERVIÇOS */
+
+.booking-services {
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+
+  margin-bottom: 16px;
+}
+
+.booking-service {
+  min-width: 0;
+  min-height: 78px;
+
+  padding: 12px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.booking-service strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.booking-service span {
+  margin-top: 5px;
+
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+
+/* INPUTS */
+
+.booking-step input {
+  width: 100%;
+  min-width: 0;
+
+  height: 48px;
+
+  padding: 0 12px;
+
+  font-size: 16px;
+}
+
+
+/* HORÁRIOS */
+
+.time-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 7px;
+
+  margin: 10px 0 18px;
+}
+
+.time-btn {
+  width: 100%;
+
+  min-width: 0;
+  min-height: 44px;
+
+  padding: 8px 5px;
+
+  font-size: 13px;
+}
+
+
+/* DADOS DO CLIENTE */
+
+.field-grid {
+  grid-template-columns: 1fr;
+
+  gap: 4px;
+}
+
+.field-grid .wide {
+  grid-column: auto;
+}
+
+
+/* BOTÕES VOLTAR / CONTINUAR */
+
+.two-buttons {
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+
+  margin-top: 18px;
+}
+
+.two-buttons .btn {
+  min-width: 0;
+
+  padding: 13px 8px;
+
+  font-size: 13px;
+}
+
+
+/* RESUMO */
+
+.booking-summary {
+  padding: 14px;
+
+  margin-top: 18px;
+
+  font-size: 13px;
+}
+
+
+/* CONFIRMAÇÃO */
+
+.success-step {
+  padding: 35px 5px 15px;
+}
+
+.success-step h3 {
+  font-size: 29px;
+}
+}
+
+
+/* EXTRA SMALL */
+@media (max-width: 420px) {
+  .booking-modal-single,
+  .booking-section,
+  .booking-panel,
+  .booking-wrapper {
+    width: calc(100vw - 16px);
+    padding: 22px 14px;
+  }
+
+  .booking-head h2,
+  .booking-section-header h2 {
+    font-size: 32px;
+  }
+
+  .time-grid {
+    grid-template-columns: 1fr;
+  }
+}
