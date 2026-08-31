@@ -1886,3 +1886,17 @@ footer {
     padding: 28px 5vw 32px;
   }
 }
+
+.product-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.store-only-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.85;
+  text-align: right;
+}
