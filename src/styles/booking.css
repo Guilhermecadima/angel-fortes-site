@@ -1190,3 +1190,89 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================
+   BOOKING MOBILE FINAL FIX
+========================================== */
+
+.booking-single-form,
+.booking-field,
+.booking-preferred-card,
+.booking-preferred-card-inner {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.booking-field input,
+.booking-field select,
+.booking-field textarea,
+.booking-preferred-card input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+/* Campo da data e restantes fields alinhados */
+.booking-field input[type="date"],
+.booking-field select,
+.booking-field input[type="text"],
+.booking-field input[type="email"],
+.booking-field input[type="tel"],
+.booking-preferred-card input[type="time"],
+.booking-preferred-card input[type="text"] {
+  min-height: 58px;
+  padding: 0 18px;
+}
+
+/* Card "a que horas gostarias de marcar?" */
+.booking-preferred-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.booking-preferred-card input {
+  margin: 0;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .booking-modal-single,
+  .booking-modal {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 26px 16px;
+    box-sizing: border-box;
+  }
+
+  .booking-single-form {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .booking-field,
+  .booking-preferred-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .booking-field input,
+  .booking-field select,
+  .booking-preferred-card input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .booking-preferred-card {
+    padding: 18px 14px;
+  }
+
+  .booking-preferred-card input {
+    width: 100%;
+    margin: 0;
+  }
+}

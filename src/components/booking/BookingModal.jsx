@@ -979,7 +979,7 @@ export default function BookingModal({
 
           <div className="preferred-time-block">
 
-            <div className="booking-field preferred-time-field">
+            <div className="booking-field preferred-time-field booking-preferred-card">
 
               <label htmlFor="preferred-time">
                 A que horas gostarias de marcar?
