@@ -73,8 +73,7 @@
   .service-grid,
   .product-grid,
   .review-grid {
-    grid-template-columns:
-      1fr 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
 
@@ -126,6 +125,13 @@
   }
 
 
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+
   /* =======================================================
      HEADER
   ======================================================= */
@@ -137,25 +143,20 @@
     left: 0 !important;
     right: 0 !important;
 
-    z-index: 30;
+    z-index: 1000 !important;
 
     width: 100% !important;
     height: var(--header-height) !important;
 
     display: flex !important;
     align-items: center !important;
-
-    /*
-     * IMPORTANTE:
-     * não usamos space-between.
-     * O margin-left:auto das ações
-     * empurra-as mesmo até à direita.
-     */
     justify-content: flex-start !important;
 
     padding:
       8px
       14px !important;
+
+    margin: 0 !important;
 
     box-sizing: border-box !important;
   }
@@ -166,10 +167,7 @@
   .site-header > .brand {
     position: static !important;
 
-    flex:
-      0
-      0
-      auto !important;
+    flex: 0 0 auto !important;
 
     display: flex !important;
     align-items: center !important;
@@ -184,11 +182,13 @@
     width: auto !important;
     height: 43px !important;
 
-    display: block;
+    display: block !important;
+
+    margin: 0 !important;
   }
 
 
-  /* ESCONDER NAV DESKTOP */
+  /* ESCONDER DESKTOP NAV */
 
   .site-header > .desktop-nav,
   .site-header .header-book {
@@ -201,10 +201,7 @@
   .site-header > .header-actions {
     position: static !important;
 
-    flex:
-      0
-      0
-      auto !important;
+    flex: 0 0 auto !important;
 
     display: flex !important;
     align-items: center !important;
@@ -214,10 +211,6 @@
 
     width: auto !important;
 
-    /*
-     * ISTO É O QUE MANDA
-     * O GRUPO PARA A DIREITA.
-     */
     margin:
       0
       0
@@ -233,10 +226,7 @@
   /* SACO */
 
   .site-header .icon-btn {
-    flex:
-      0
-      0
-      auto;
+    flex: 0 0 auto;
 
     min-width: 0;
     min-height: 40px;
@@ -267,10 +257,7 @@
   /* HAMBURGER */
 
   .site-header .menu-toggle {
-    flex:
-      0
-      0
-      40px !important;
+    flex: 0 0 40px !important;
 
     width: 40px !important;
     height: 40px !important;
@@ -282,11 +269,11 @@
     margin: 0 !important;
     padding: 0 !important;
 
-    background: transparent;
+    background: transparent !important;
 
-    border: 0;
+    border: 0 !important;
 
-    color: #fff;
+    color: #fff !important;
 
     font-size: 25px;
     line-height: 1;
@@ -298,57 +285,45 @@
   /* MOBILE MENU */
 
   .mobile-menu {
-    top: var(--header-height);
+    top: var(--header-height) !important;
   }
 
 
   /* =======================================================
-     HERO — APENAS HERO + NAVBAR NO PRIMEIRO ECRÃ
+     HERO — PRIMEIRO ECRÃ COMPLETO
   ======================================================= */
 
   .hero {
     /*
-     * A navbar é fixed.
-     * Portanto:
+     * IMPORTANTE:
      *
-     * 70px navbar
-     * +
-     * resto do viewport hero
-     * =
-     * exatamente um ecrã.
+     * A navbar é FIXED e fica por cima da hero.
+     * Portanto NÃO descontamos os 70px.
+     *
+     * 100svh mantém uma altura estável mesmo quando
+     * as barras do Safari / Chrome aparecem e desaparecem.
      */
 
-    width: 100%;
+    width: 100% !important;
 
-    height:
-      calc(
-        100svh -
-        var(--header-height)
-      );
+    height: 100vh !important;
+    height: 100svh !important;
 
-    min-height:
-      calc(
-        100svh -
-        var(--header-height)
-      );
+    min-height: 100vh !important;
+    min-height: 100svh !important;
 
-    max-height:
-      calc(
-        100svh -
-        var(--header-height)
-      );
+    max-height: 100svh !important;
 
-    margin-top:
-      var(--header-height);
+    margin: 0 !important;
 
     padding:
-      0
+      var(--header-height)
       5vw
-      25px;
+      25px !important;
 
-    box-sizing: border-box;
+    box-sizing: border-box !important;
 
-    overflow: hidden;
+    overflow: hidden !important;
   }
 
 
@@ -371,6 +346,7 @@
     width: 100%;
 
     align-items: stretch;
+
     flex-direction: column;
   }
 
@@ -399,7 +375,9 @@
   }
 
 
-  /* STATS */
+  /* =======================================================
+     STATS
+  ======================================================= */
 
   .stats {
     gap: 20px;
@@ -408,11 +386,14 @@
   }
 
 
-  /* ABOUT PHOTOS */
+  /* =======================================================
+     ABOUT PHOTOS
+  ======================================================= */
 
   .photo-stack {
     min-height: 410px;
   }
+
 
   .photo-main {
     right: 35px;
@@ -422,6 +403,7 @@
         100% - 35px
       );
   }
+
 
   .photo-small {
     width: 47%;
@@ -451,11 +433,13 @@
       5vw;
   }
 
+
   .experience-card {
     padding:
       32px
       25px;
   }
+
 
   .experience h2 {
     font-size: 43px;
@@ -481,6 +465,7 @@
     grid-template-columns: 1fr;
   }
 
+
   .footer-links {
     flex-wrap: wrap;
   }
@@ -493,8 +478,10 @@
   .admin-header,
   .admin-top {
     align-items: flex-start;
+
     flex-direction: column;
   }
+
 
   .kpis {
     grid-template-columns: 1fr;
@@ -507,6 +494,7 @@
 
   .reviews-actions {
     flex-direction: column;
+
     align-items: stretch;
   }
 
@@ -519,7 +507,15 @@
 
 @media (max-width: 420px) {
 
+  :root {
+    --header-height: 68px;
+  }
+
+
   .site-header {
+    height:
+      var(--header-height) !important;
+
     padding:
       7px
       12px !important;
@@ -555,54 +551,33 @@
   }
 
 
-  .hero h1 {
-    font-size: 50px;
+  .mobile-menu {
+    top:
+      var(--header-height) !important;
   }
 
-}
-
-/* =========================================================
-   HOME MOBILE — HERO SEM MOSTRAR A SECÇÃO SEGUINTE
-========================================================= */
-
-@media (max-width: 700px) {
 
   .hero {
-    width: 100% !important;
-
     /*
-     * Altura congelada no instante
-     * em que o utilizador entra no site.
+     * Continua a ser exatamente um viewport.
+     * Só muda o espaço reservado para a navbar.
      */
-    height:
-      calc(
-        var(--initial-mobile-height, 100svh)
-        - var(--header-height)
-      ) !important;
 
-    min-height:
-      calc(
-        var(--initial-mobile-height, 100svh)
-        - var(--header-height)
-      ) !important;
+    height: 100vh !important;
+    height: 100svh !important;
 
-    max-height:
-      calc(
-        var(--initial-mobile-height, 100svh)
-        - var(--header-height)
-      ) !important;
+    min-height: 100vh !important;
+    min-height: 100svh !important;
 
-    margin-top:
+    max-height: 100svh !important;
+
+    padding-top:
       var(--header-height) !important;
+  }
 
-    padding:
-      0
-      5vw
-      25px !important;
 
-    box-sizing: border-box !important;
-
-    overflow: hidden !important;
+  .hero h1 {
+    font-size: 50px;
   }
 
 }
