@@ -1070,3 +1070,108 @@ input[type="time"] {
   }
 
 }
+
+/* =========================================================
+   BOOKING MODAL — MOBILE STABLE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .modal-backdrop {
+    width: 100%;
+    height: 100dvh;
+
+    align-items: flex-start;
+
+    padding:
+      max(
+        8px,
+        env(safe-area-inset-top)
+      )
+      8px
+      max(
+        8px,
+        env(safe-area-inset-bottom)
+      );
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+  }
+
+
+  .booking-modal,
+  .booking-modal-single {
+    width: 100%;
+    max-width: 100%;
+
+    /*
+     * Nunca passa para baixo/para cima
+     * do viewport real do telemóvel.
+     */
+    max-height:
+      calc(
+        100dvh -
+        16px -
+        env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
+      );
+
+    margin: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    overscroll-behavior: contain;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  /*
+   * X fica ancorado no topo do modal
+   * mesmo quando fazemos scroll no form.
+   */
+
+  .modal-close {
+    position: sticky;
+
+    top: 0;
+    right: auto;
+
+    z-index: 100;
+
+    display: grid;
+    place-items: center;
+
+    width: 38px;
+    height: 38px;
+
+    margin-left: auto;
+    margin-bottom: -38px;
+
+    transform:
+      translate(
+        5px,
+        -5px
+      );
+
+    background:
+      rgba(
+        250,
+        248,
+        243,
+        0.96
+      );
+
+    border-radius: 50%;
+
+    color: #111;
+
+    backdrop-filter:
+      blur(8px);
+
+    cursor: pointer;
+  }
+
+}

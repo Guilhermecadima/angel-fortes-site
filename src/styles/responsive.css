@@ -1,51 +1,562 @@
+/* =========================================================
+   ANGEL FORTES — RESPONSIVE
+========================================================= */
+
+
+/* =========================================================
+   TABLET / MOBILE
+========================================================= */
+
 @media (max-width: 900px) {
-  :root { --header-height: 76px; }
-  .desktop-nav { display: none; }
-  .menu-toggle { display: block; }
-  .header-book { display: none; }
-  .hero { padding-left: 5vw; padding-right: 5vw; }
-  .hero-content { margin-bottom: 105px; }
-  .hero-meta { display: grid; gap: 12px; left: 5vw; }
-  .quick-book { align-items: flex-start; flex-direction: column; }
-  .about { grid-template-columns: 1fr; }
-  .photo-stack { min-height: 520px; }
-  .service-grid, .product-grid, .review-grid { grid-template-columns: 1fr 1fr; }
-  .contact { grid-template-columns: 1fr; }
-  .contact iframe { min-height: 390px; }
-  .experience { background-attachment: scroll; }
-  .section-heading { align-items: flex-start; flex-direction: column; }
-  .reviews-layout { grid-template-columns: 1fr; gap: 45px; }
+
+  :root {
+    --header-height: 76px;
+  }
+
+
+  /* HEADER */
+
+  .desktop-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+
+  .header-book {
+    display: none;
+  }
+
+
+  /* HERO */
+
+  .hero {
+    padding-left: 5vw;
+    padding-right: 5vw;
+  }
+
+  .hero-content {
+    margin-bottom: 105px;
+  }
+
+  .hero-meta {
+    left: 5vw;
+
+    display: grid;
+
+    gap: 12px;
+  }
+
+
+  /* QUICK BOOK */
+
+  .quick-book {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+
+  /* ABOUT */
+
+  .about {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-stack {
+    min-height: 520px;
+  }
+
+
+  /* GRIDS */
+
+  .service-grid,
+  .product-grid,
+  .review-grid {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+
+  /* CONTACT */
+
+  .contact {
+    grid-template-columns: 1fr;
+  }
+
+  .contact iframe {
+    min-height: 390px;
+  }
+
+
+  /* EXPERIENCE */
+
+  .experience {
+    background-attachment: scroll;
+  }
+
+
+  /* HEADINGS */
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+
+  /* REVIEWS */
+
+  .reviews-layout {
+    grid-template-columns: 1fr;
+
+    gap: 45px;
+  }
+
 }
 
-@media (max-width: 650px) {
-  :root { --header-height: 70px; }
-  .site-header { padding: 10px 4vw; }
-  .brand img { height: 43px; }
-  .hero { min-height: 760px; }
-  .hero h1 { font-size: 56px; }
-  .hero-copy { font-size: 16px; }
-  .hero-actions { align-items: stretch; flex-direction: column; width: 100%; }
-  .section { padding: 78px 5vw; }
-  .section h2 { font-size: 42px; }
-  .stats { gap: 20px; flex-wrap: wrap; }
-  .photo-stack { min-height: 410px; }
-  .photo-main { right: 35px; width: calc(100% - 35px); }
-  .photo-small { width: 47%; border-width: 6px; }
-  .service-grid, .product-grid, .review-grid { grid-template-columns: 1fr; }
-  .experience { padding: 55px 5vw; }
-  .experience-card { padding: 32px 25px; }
-  .experience h2 { font-size: 43px; }
-  .contact-card { padding: 70px 6vw; }
-  footer { grid-template-columns: 1fr; }
-  .footer-links { flex-wrap: wrap; }
-  .booking-modal { padding: 27px 18px; }
-  .booking-head h2 { font-size: 37px; }
-  .booking-services { grid-template-columns: 1fr; }
-  .time-grid { grid-template-columns: repeat(3,1fr); }
-  .field-grid { grid-template-columns: 1fr; }
-  .field-grid .wide { grid-column: auto; }
-  .steps { gap: 10px; font-size: 11px; }
-  .admin-header, .admin-top { align-items: flex-start; flex-direction: column; }
-  .kpis { grid-template-columns: 1fr; }
-  .reviews-actions { flex-direction: column; align-items: stretch; }
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  :root {
+    --header-height: 70px;
+  }
+
+
+  /* =======================================================
+     HEADER
+  ======================================================= */
+
+  .site-header {
+    position: fixed !important;
+
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+
+    z-index: 30;
+
+    width: 100% !important;
+    height: var(--header-height) !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    /*
+     * IMPORTANTE:
+     * não usamos space-between.
+     * O margin-left:auto das ações
+     * empurra-as mesmo até à direita.
+     */
+    justify-content: flex-start !important;
+
+    padding:
+      8px
+      14px !important;
+
+    box-sizing: border-box !important;
+  }
+
+
+  /* LOGO */
+
+  .site-header > .brand {
+    position: static !important;
+
+    flex:
+      0
+      0
+      auto !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: none !important;
+  }
+
+  .site-header > .brand img {
+    width: auto !important;
+    height: 43px !important;
+
+    display: block;
+  }
+
+
+  /* ESCONDER NAV DESKTOP */
+
+  .site-header > .desktop-nav,
+  .site-header .header-book {
+    display: none !important;
+  }
+
+
+  /* SACO + MENU */
+
+  .site-header > .header-actions {
+    position: static !important;
+
+    flex:
+      0
+      0
+      auto !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    gap: 9px !important;
+
+    width: auto !important;
+
+    /*
+     * ISTO É O QUE MANDA
+     * O GRUPO PARA A DIREITA.
+     */
+    margin:
+      0
+      0
+      0
+      auto !important;
+
+    padding: 0 !important;
+
+    transform: none !important;
+  }
+
+
+  /* SACO */
+
+  .site-header .icon-btn {
+    flex:
+      0
+      0
+      auto;
+
+    min-width: 0;
+    min-height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0 !important;
+
+    padding:
+      0
+      13px !important;
+
+    white-space: nowrap;
+  }
+
+
+  /* CONTADOR */
+
+  .site-header .icon-btn span {
+    flex-shrink: 0;
+
+    margin-left: 6px;
+  }
+
+
+  /* HAMBURGER */
+
+  .site-header .menu-toggle {
+    flex:
+      0
+      0
+      40px !important;
+
+    width: 40px !important;
+    height: 40px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: transparent;
+
+    border: 0;
+
+    color: #fff;
+
+    font-size: 25px;
+    line-height: 1;
+
+    cursor: pointer;
+  }
+
+
+  /* MOBILE MENU */
+
+  .mobile-menu {
+    top: var(--header-height);
+  }
+
+
+  /* =======================================================
+     HERO — APENAS HERO + NAVBAR NO PRIMEIRO ECRÃ
+  ======================================================= */
+
+  .hero {
+    /*
+     * A navbar é fixed.
+     * Portanto:
+     *
+     * 70px navbar
+     * +
+     * resto do viewport hero
+     * =
+     * exatamente um ecrã.
+     */
+
+    width: 100%;
+
+    height:
+      calc(
+        100svh -
+        var(--header-height)
+      );
+
+    min-height:
+      calc(
+        100svh -
+        var(--header-height)
+      );
+
+    max-height:
+      calc(
+        100svh -
+        var(--header-height)
+      );
+
+    margin-top:
+      var(--header-height);
+
+    padding:
+      0
+      5vw
+      25px;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+  }
+
+
+  .hero-content {
+    margin-bottom: 100px;
+  }
+
+
+  .hero h1 {
+    font-size: 56px;
+  }
+
+
+  .hero-copy {
+    font-size: 16px;
+  }
+
+
+  .hero-actions {
+    width: 100%;
+
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+
+  .hero-meta {
+    left: 5vw;
+    right: 5vw;
+
+    bottom: 18px;
+  }
+
+
+  /* =======================================================
+     GENERAL
+  ======================================================= */
+
+  .section {
+    padding:
+      78px
+      5vw;
+  }
+
+
+  .section h2 {
+    font-size: 42px;
+  }
+
+
+  /* STATS */
+
+  .stats {
+    gap: 20px;
+
+    flex-wrap: wrap;
+  }
+
+
+  /* ABOUT PHOTOS */
+
+  .photo-stack {
+    min-height: 410px;
+  }
+
+  .photo-main {
+    right: 35px;
+
+    width:
+      calc(
+        100% - 35px
+      );
+  }
+
+  .photo-small {
+    width: 47%;
+
+    border-width: 6px;
+  }
+
+
+  /* =======================================================
+     SERVICES / SHOP / REVIEWS
+  ======================================================= */
+
+  .service-grid,
+  .product-grid,
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  /* =======================================================
+     EXPERIENCE
+  ======================================================= */
+
+  .experience {
+    padding:
+      55px
+      5vw;
+  }
+
+  .experience-card {
+    padding:
+      32px
+      25px;
+  }
+
+  .experience h2 {
+    font-size: 43px;
+  }
+
+
+  /* =======================================================
+     CONTACT
+  ======================================================= */
+
+  .contact-card {
+    padding:
+      70px
+      6vw;
+  }
+
+
+  /* =======================================================
+     FOOTER
+  ======================================================= */
+
+  footer {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+  }
+
+
+  /* =======================================================
+     ADMIN
+  ======================================================= */
+
+  .admin-header,
+  .admin-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+
+
+  /* =======================================================
+     REVIEWS
+  ======================================================= */
+
+  .reviews-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 420px) {
+
+  .site-header {
+    padding:
+      7px
+      12px !important;
+  }
+
+
+  .site-header > .brand img {
+    height: 40px !important;
+  }
+
+
+  .site-header > .header-actions {
+    gap: 7px !important;
+  }
+
+
+  .site-header .icon-btn {
+    min-height: 38px;
+
+    padding:
+      0
+      11px !important;
+
+    font-size: 13px;
+  }
+
+
+  .site-header .menu-toggle {
+    flex-basis: 38px !important;
+
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+
+  .hero h1 {
+    font-size: 50px;
+  }
+
 }
