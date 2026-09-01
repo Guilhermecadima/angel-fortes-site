@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect  } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Hero from '../components/sections/Hero';
@@ -35,6 +35,35 @@ export default function HomePage() {
     add(product);
     setCartOpen(true);
   };
+
+  useEffect(() => {
+  const setInitialMobileHeight = () => {
+    const height =
+      window.visualViewport?.height ||
+      window.innerHeight;
+
+    document.documentElement.style.setProperty(
+      '--initial-mobile-height',
+      `${height}px`
+    );
+  };
+
+  // Só calcula quando a página abre
+  setInitialMobileHeight();
+
+  // Só recalcula se rodares o telemóvel
+  window.addEventListener(
+    'orientationchange',
+    setInitialMobileHeight
+  );
+
+  return () => {
+    window.removeEventListener(
+      'orientationchange',
+      setInitialMobileHeight
+    );
+  };
+}, []);
 
   return (
     <>

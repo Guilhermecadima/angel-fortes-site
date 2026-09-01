@@ -567,26 +567,38 @@
 
 @media (max-width: 700px) {
 
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
   .hero {
     width: 100% !important;
 
     /*
-     * Hero ocupa TODO o ecrã visível.
-     * A navbar fica por cima porque é fixed.
+     * Altura congelada no instante
+     * em que o utilizador entra no site.
      */
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
+    height:
+      calc(
+        var(--initial-mobile-height, 100svh)
+        - var(--header-height)
+      ) !important;
 
-    margin: 0 !important;
+    min-height:
+      calc(
+        var(--initial-mobile-height, 100svh)
+        - var(--header-height)
+      ) !important;
 
-    padding-top: var(--header-height) !important;
+    max-height:
+      calc(
+        var(--initial-mobile-height, 100svh)
+        - var(--header-height)
+      ) !important;
+
+    margin-top:
+      var(--header-height) !important;
+
+    padding:
+      0
+      5vw
+      25px !important;
 
     box-sizing: border-box !important;
 
