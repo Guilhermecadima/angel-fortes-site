@@ -560,3 +560,37 @@
   }
 
 }
+
+/* =========================================================
+   HOME MOBILE — HERO SEM MOSTRAR A SECÇÃO SEGUINTE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .hero {
+    width: 100% !important;
+
+    /*
+     * Hero ocupa TODO o ecrã visível.
+     * A navbar fica por cima porque é fixed.
+     */
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+
+    margin: 0 !important;
+
+    padding-top: var(--header-height) !important;
+
+    box-sizing: border-box !important;
+
+    overflow: hidden !important;
+  }
+
+}
