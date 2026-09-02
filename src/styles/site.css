@@ -32,6 +32,13 @@
   background: #080808;
 }
 
+@supports (height: 100dvh) {
+  .hero {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
+}
+
 /* FOTO */
 .hero-media {
   position: absolute;
@@ -1906,11 +1913,4 @@ footer {
   font-weight: 600;
   opacity: 0.85;
   text-align: right;
-}
-
-@supports (height: 100dvh) {
-  .hero {
-    min-height: 100dvh;
-    height: 100dvh;
-  }
 }
