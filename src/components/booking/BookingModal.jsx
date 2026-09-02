@@ -765,43 +765,7 @@ export default function BookingModal({
               A tua marcação foi enviada
               com sucesso.
             </p>
-
-
-            <div className="booking-summary">
-
-              <strong>
-                {selectedService?.name}
-              </strong>
-
-
-              <span>
-
-                {date
-                  ? new Date(
-                      `${date}T12:00:00`,
-                    ).toLocaleDateString(
-                      'pt-PT',
-                    )
-                  : ''}
-
-                {' · '}
-
-                {time}
-
-              </span>
-
-
-              <span>
-                {selectedService
-                  ? formatCurrency(
-                      selectedService.price,
-                    )
-                  : ''}
-              </span>
-
-            </div>
-
-
+            
             <button
               type="button"
               className="btn btn-dark full"
