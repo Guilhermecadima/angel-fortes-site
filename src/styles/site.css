@@ -768,6 +768,13 @@ footer { background: #070707; color: #fff; padding: 65px 6vw; display: grid; gri
 
 @media (max-width: 700px) {
 
+  .hero {
+    min-height: 100svh !important;
+    height: 100svh !important;
+
+    padding-top: env(safe-area-inset-top);
+  }
+
   .reviews-rating {
     align-items: flex-start;
   }
@@ -1899,4 +1906,11 @@ footer {
   font-weight: 600;
   opacity: 0.85;
   text-align: right;
+}
+
+@supports (height: 100dvh) {
+  .hero {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
 }
