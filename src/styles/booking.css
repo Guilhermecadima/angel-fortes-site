@@ -1572,3 +1572,16 @@ input[type="time"] {
   font-size: 12px !important;
 }
 }
+
+/* Remove as linhas verticais dentro da data/hora */
+.native-picker-wrap input,
+.native-picker-wrap input[type="date"],
+.native-picker-wrap input[type="time"] {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+
+  width: 100% !important;
+
+  background: transparent !important;
+}

@@ -765,7 +765,7 @@ export default function BookingModal({
               A tua marcação foi enviada
               com sucesso.
             </p>
-            
+
             <button
               type="button"
               className="btn btn-dark full"
@@ -1218,60 +1218,6 @@ export default function BookingModal({
             </div>
 
           </div>
-
-
-          {/* RESUMO */}
-
-          {selectedService &&
-            date &&
-            time && (
-
-              <div className="booking-summary">
-
-                <strong>
-                  Resumo da marcação
-                </strong>
-
-
-                <span>
-                  {selectedService.name}
-                </span>
-
-
-                <span>
-
-                  {new Date(
-                    `${date}T12:00:00`,
-                  ).toLocaleDateString(
-                    'pt-PT',
-                  )}
-
-                  {' · '}
-
-                  {time}
-
-                </span>
-
-
-                <span>
-                  {formatCurrency(
-                    selectedService.price,
-                  )}
-                </span>
-
-              </div>
-
-            )}
-
-
-          {error && (
-
-            <p className="booking-error">
-              {error}
-            </p>
-
-          )}
-
 
           <button
             type="submit"
