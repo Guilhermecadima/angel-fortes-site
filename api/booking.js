@@ -1,12 +1,19 @@
-import { Resend } from 'resend';
+import {
+  Resend,
+} from 'resend';
 
-import { supabaseAdmin } from './supabaseAdmin.js';
+import {
+  supabaseAdmin,
+} from './supabaseAdmin.js';
 
-import { services } from '../src/data/services.js';
+import {
+  services,
+} from '../src/data/services.js';
 
 import {
   hasMinimumNotice,
   isSunday,
+  isValidBookingDate,
   isValidBookingSlot,
   rangesOverlap,
   timeToMinutes,
@@ -24,38 +31,51 @@ const resend =
 ========================================================= */
 
 function escapeHtml(value) {
-
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
+  return String(
+    value ?? '',
+  )
+    .replaceAll(
+      '&',
+      '&amp;',
+    )
+    .replaceAll(
+      '<',
+      '&lt;',
+    )
+    .replaceAll(
+      '>',
+      '&gt;',
+    )
+    .replaceAll(
+      '"',
+      '&quot;',
+    )
+    .replaceAll(
+      "'",
+      '&#039;',
+    );
 }
 
 
 /* =========================================================
-   BOOKING API
+   BOOKING
 ========================================================= */
 
 export default async function handler(
   req,
   res,
 ) {
-
-  if (req.method !== 'POST') {
-
+  if (
+    req.method !== 'POST'
+  ) {
     return res.status(405).json({
       message:
         'Method not allowed',
     });
-
   }
 
 
   try {
-
     const {
       name,
       phone,
@@ -75,12 +95,10 @@ export default async function handler(
         name || '',
       ).trim();
 
-
     const cleanPhone =
       String(
         phone || '',
       ).trim();
-
 
     const cleanEmail =
       String(
@@ -89,18 +107,15 @@ export default async function handler(
         .trim()
         .toLowerCase();
 
-
     const cleanServiceId =
       String(
         serviceId || '',
       ).trim();
 
-
     const cleanDate =
       String(
         date || '',
       ).trim();
-
 
     const cleanTime =
       String(
@@ -109,7 +124,7 @@ export default async function handler(
 
 
     /* =====================================================
-       CAMPOS OBRIGATÓRIOS
+       CAMPOS
     ===================================================== */
 
     if (
@@ -120,12 +135,10 @@ export default async function handler(
       !cleanDate ||
       !cleanTime
     ) {
-
       return res.status(400).json({
         message:
           'Dados incompletos.',
       });
-
     }
 
 
@@ -136,35 +149,34 @@ export default async function handler(
     const emailPattern =
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-
     if (
       !emailPattern.test(
         cleanEmail,
       )
     ) {
-
       return res.status(400).json({
         message:
           'Introduz um email válido.',
       });
-
     }
 
 
     /* =====================================================
        DATA
+
+       Esta é uma das correções importantes.
+       Não basta validar YYYY-MM-DD.
     ===================================================== */
 
     if (
-      !/^\d{4}-\d{2}-\d{2}$/
-        .test(cleanDate)
+      !isValidBookingDate(
+        cleanDate,
+      )
     ) {
-
       return res.status(400).json({
         message:
           'Data inválida.',
       });
-
     }
 
 
@@ -179,14 +191,13 @@ export default async function handler(
           cleanServiceId,
       );
 
-
-    if (!selectedService) {
-
+    if (
+      !selectedService
+    ) {
       return res.status(400).json({
         message:
           'Serviço inválido.',
       });
-
     }
 
 
@@ -195,19 +206,19 @@ export default async function handler(
     ===================================================== */
 
     if (
-      isSunday(cleanDate)
+      isSunday(
+        cleanDate,
+      )
     ) {
-
       return res.status(400).json({
         message:
           'A barbearia está fechada ao domingo.',
       });
-
     }
 
 
     /* =====================================================
-       VALIDAR HORÁRIO
+       HORÁRIO
     ===================================================== */
 
     if (
@@ -216,12 +227,10 @@ export default async function handler(
         selectedService.duration,
       )
     ) {
-
       return res.status(400).json({
         message:
           'Horário inválido.',
       });
-
     }
 
 
@@ -235,17 +244,15 @@ export default async function handler(
         cleanTime,
       )
     ) {
-
       return res.status(400).json({
         message:
           'As marcações devem ser feitas com pelo menos 8 horas de antecedência.',
       });
-
     }
 
 
     /* =====================================================
-       CONSULTAR MARCAÇÕES
+       MARCAÇÕES EXISTENTES
     ===================================================== */
 
     const {
@@ -254,36 +261,35 @@ export default async function handler(
 
       error:
         existingError,
+    } =
+      await supabaseAdmin
+        .from(
+          'appointments',
+        )
+        .select(`
+          id,
+          appointment_time,
+          duration,
+          status
+        `)
+        .eq(
+          'appointment_date',
+          cleanDate,
+        )
+        .neq(
+          'status',
+          'cancelled',
+        );
 
-    } = await supabaseAdmin
-
-      .from('appointments')
-
-      .select(`
-        id,
-        appointment_time,
-        duration,
-        status
-      `)
-
-      .eq(
-        'appointment_date',
-        cleanDate,
-      )
-
-      .neq(
-        'status',
-        'cancelled',
-      );
-
-
-    if (existingError) {
+    if (
+      existingError
+    ) {
       throw existingError;
     }
 
 
     /* =====================================================
-       VERIFICAR CONFLITO
+       CONFLITOS
     ===================================================== */
 
     const requestedStart =
@@ -291,25 +297,21 @@ export default async function handler(
         cleanTime,
       );
 
-
     const hasConflict =
       (
         existingAppointments || []
       ).some(
         (appointment) => {
-
           const existingStart =
             timeToMinutes(
               appointment
                 .appointment_time,
             );
 
-
           const existingDuration =
             Number(
               appointment.duration,
             );
-
 
           if (
             !Number.isFinite(
@@ -322,131 +324,109 @@ export default async function handler(
             return false;
           }
 
-
           return rangesOverlap(
-
             requestedStart,
-
-            selectedService.duration,
-
+            selectedService
+              .duration,
             existingStart,
-
             existingDuration,
-
           );
-
         },
       );
 
-
-    if (hasConflict) {
-
+    if (
+      hasConflict
+    ) {
       return res.status(409).json({
         message:
           'Este horário já não está disponível. Escolhe outro horário.',
       });
-
     }
 
 
     /* =====================================================
-       INSERT SUPABASE
+       GUARDAR NO SUPABASE
     ===================================================== */
 
     const {
       data: appointment,
       error: supabaseError,
-    } = await supabaseAdmin
+    } =
+      await supabaseAdmin
+        .from(
+          'appointments',
+        )
+        .insert({
+          name:
+            cleanName,
 
-      .from('appointments')
+          email:
+            cleanEmail,
 
-      .insert({
+          phone:
+            cleanPhone,
 
-        name:
-          cleanName,
+          service:
+            selectedService.name,
 
-        email:
-          cleanEmail,
+          price:
+            selectedService.price,
 
-        phone:
-          cleanPhone,
+          duration:
+            selectedService.duration,
 
-        service:
-          selectedService.name,
+          appointment_date:
+            cleanDate,
 
-        price:
-          selectedService.price,
+          appointment_time:
+            cleanTime,
 
-        duration:
-          selectedService.duration,
+          status:
+            'confirmed',
 
-        appointment_date:
-          cleanDate,
+          marketing_consent:
+            false,
 
-        appointment_time:
-          cleanTime,
+          followup_sent_at:
+            null,
 
-        status:
-          'confirmed',
-
-        /*
-         * Não existe ainda checkbox
-         * de autorização de marketing.
-         */
-        marketing_consent:
-          false,
-
-        followup_sent_at:
-          null,
-
-        followup_opt_out:
-          false,
-
-      })
-
-      .select('id')
-
-      .single();
+          followup_opt_out:
+            false,
+        })
+        .select(
+          'id',
+        )
+        .single();
 
 
-    if (supabaseError) {
-
+    if (
+      supabaseError
+    ) {
       console.error(
         'Erro Supabase:',
         supabaseError,
       );
 
-
       /*
-       * 23P01 =
-       * exclusion constraint
-       *
-       * 23505 =
-       * unique constraint
+       * 23P01 = overlap/exclusion constraint
+       * 23505 = unique constraint
        */
-
       if (
         supabaseError.code ===
           '23P01' ||
         supabaseError.code ===
           '23505'
       ) {
-
         return res.status(409).json({
           message:
             'Este horário acabou de ser reservado. Escolhe outro horário.',
         });
-
       }
 
-
       return res.status(500).json({
-
         message:
           `Erro Supabase: ${supabaseError.message}`,
-
       });
-
     }
 
 
@@ -457,45 +437,49 @@ export default async function handler(
     let emailSent =
       false;
 
-
     if (
-      process.env.RESEND_API_KEY &&
+      process.env
+        .RESEND_API_KEY &&
       process.env
         .FOLLOWUP_EMAIL_FROM &&
-      process.env.BOOKING_EMAIL
+      process.env
+        .BOOKING_EMAIL
     ) {
-
       const safeName =
-        escapeHtml(cleanName);
-
+        escapeHtml(
+          cleanName,
+        );
 
       const safePhone =
-        escapeHtml(cleanPhone);
-
+        escapeHtml(
+          cleanPhone,
+        );
 
       const safeEmail =
-        escapeHtml(cleanEmail);
-
+        escapeHtml(
+          cleanEmail,
+        );
 
       const safeService =
         escapeHtml(
           selectedService.name,
         );
 
-
       const safeDate =
-        escapeHtml(cleanDate);
-
+        escapeHtml(
+          cleanDate,
+        );
 
       const safeTime =
-        escapeHtml(cleanTime);
-
+        escapeHtml(
+          cleanTime,
+        );
 
       const {
-        error: emailError,
+        error:
+          emailError,
       } =
         await resend.emails.send({
-
           from:
             process.env
               .FOLLOWUP_EMAIL_FROM,
@@ -517,7 +501,6 @@ export default async function handler(
                   Arial,
                   Helvetica,
                   sans-serif;
-
                 max-width:600px;
                 margin:0 auto;
                 color:#111;
@@ -559,26 +542,36 @@ export default async function handler(
               <div
                 style="
                   padding:28px;
-                  border:
-                    1px solid #e6dfd2;
+                  border:1px solid #e6dfd2;
                   border-top:0;
                 "
               >
 
-                <h3>Cliente</h3>
+                <h3>
+                  Cliente
+                </h3>
 
                 <p>
-                  <strong>Nome:</strong>
+                  <strong>
+                    Nome:
+                  </strong>
+
                   ${safeName}
                 </p>
 
                 <p>
-                  <strong>Telefone:</strong>
+                  <strong>
+                    Telefone:
+                  </strong>
+
                   ${safePhone}
                 </p>
 
                 <p>
-                  <strong>Email:</strong>
+                  <strong>
+                    Email:
+                  </strong>
+
                   ${safeEmail}
                 </p>
 
@@ -586,38 +579,54 @@ export default async function handler(
                 <hr
                   style="
                     border:0;
-                    border-top:
-                      1px solid #e6dfd2;
+                    border-top:1px solid #e6dfd2;
                     margin:25px 0;
                   "
                 />
 
 
-                <h3>Marcação</h3>
+                <h3>
+                  Marcação
+                </h3>
 
                 <p>
-                  <strong>Serviço:</strong>
+                  <strong>
+                    Serviço:
+                  </strong>
+
                   ${safeService}
                 </p>
 
                 <p>
-                  <strong>Duração:</strong>
+                  <strong>
+                    Duração:
+                  </strong>
+
                   ${selectedService.duration}
                   minutos
                 </p>
 
                 <p>
-                  <strong>Data:</strong>
+                  <strong>
+                    Data:
+                  </strong>
+
                   ${safeDate}
                 </p>
 
                 <p>
-                  <strong>Hora:</strong>
+                  <strong>
+                    Hora:
+                  </strong>
+
                   ${safeTime}
                 </p>
 
                 <p>
-                  <strong>Preço:</strong>
+                  <strong>
+                    Preço:
+                  </strong>
+
                   ${selectedService.price} €
                 </p>
 
@@ -625,8 +634,7 @@ export default async function handler(
                 <hr
                   style="
                     border:0;
-                    border-top:
-                      1px solid #e6dfd2;
+                    border-top:1px solid #e6dfd2;
                     margin:25px 0;
                   "
                 />
@@ -646,30 +654,24 @@ export default async function handler(
 
             </div>
           `,
-
         });
 
 
-      if (emailError) {
-
+      if (
+        emailError
+      ) {
         console.error(
           'Erro Resend:',
           emailError,
         );
-
       } else {
-
         emailSent =
           true;
-
       }
-
     } else {
-
       console.warn(
         'Email não enviado: variáveis Resend em falta.',
       );
-
     }
 
 
@@ -678,33 +680,24 @@ export default async function handler(
     ===================================================== */
 
     return res.status(200).json({
-
-      success: true,
+      success:
+        true,
 
       bookingId:
         appointment.id,
 
       emailSent,
-
     });
-
-
   } catch (error) {
-
     console.error(
       'Erro booking API:',
       error,
     );
 
-
     return res.status(500).json({
-
       message:
         error?.message ||
         'Erro ao processar a marcação.',
-
     });
-
   }
-
 }
