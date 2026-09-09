@@ -1,43 +1,124 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import {
+  useEffect,
+} from 'react';
 
-import HomePage from './pages/HomePage';
-import StorePage from './pages/StorePage';
-import ProductPage from './pages/ProductPage';
-import AdminPage from './pages/AdminPage';
-import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
-import CheckoutCancelPage from './pages/CheckoutCancelPage';
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from 'react-router-dom';
+
+import HomePage
+  from './pages/HomePage';
+
+import StorePage
+  from './pages/StorePage';
+
+import ProductPage
+  from './pages/ProductPage';
+
+import AdminPage
+  from './pages/AdminPage';
+
+import AppointmentsPage
+  from './pages/AppointmentsPage';
+
+import CheckoutSuccessPage
+  from './pages/CheckoutSuccessPage';
+
+import CheckoutCancelPage
+  from './pages/CheckoutCancelPage';
+
 
 export default function App() {
 
   useEffect(() => {
-    const handlePageShow = () => {
-      window.scrollTo(0, 0);
-    };
+    const handlePageShow =
+      () => {
+        window.scrollTo(
+          0,
+          0,
+        );
+      };
 
-    window.addEventListener('pageshow', handlePageShow);
+
+    window.addEventListener(
+      'pageshow',
+      handlePageShow,
+    );
+
 
     return () => {
-      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener(
+        'pageshow',
+        handlePageShow,
+      );
     };
   }, []);
 
+
   return (
     <BrowserRouter>
+
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/loja" element={<StorePage />} />
+
+        <Route
+          path="/"
+          element={
+            <HomePage />
+          }
+        />
+
+
+        <Route
+          path="/loja"
+          element={
+            <StorePage />
+          }
+        />
+
+
         <Route
           path="/loja/sucesso"
-          element={<CheckoutSuccessPage />}
+          element={
+            <CheckoutSuccessPage />
+          }
         />
+
+
         <Route
           path="/loja/cancelado"
-          element={<CheckoutCancelPage />}
+          element={
+            <CheckoutCancelPage />
+          }
         />
-        <Route path="/loja/:slug" element={<ProductPage />} />
-        <Route path="/admin" element={<AdminPage />} />
+
+
+        <Route
+          path="/loja/:slug"
+          element={
+            <ProductPage />
+          }
+        />
+
+
+        <Route
+          path="/admin"
+          element={
+            <AdminPage />
+          }
+        />
+
+
+        <Route
+          path="/marcacoes"
+          element={
+            <AppointmentsPage />
+          }
+        />
+
       </Routes>
+
     </BrowserRouter>
   );
 }

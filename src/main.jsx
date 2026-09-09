@@ -1,17 +1,43 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App';
+import {
+  StrictMode,
+} from 'react';
+
+import {
+  createRoot,
+} from 'react-dom/client';
+
+import App
+  from './App';
+
 import './styles/tokens.css';
+
 import './styles/base.css';
+
 import './styles/site.css';
+
 import './styles/booking.css';
+
 import './styles/admin.css';
+
 import './styles/store.css';
+
 import './styles/product-admin.css';
+
+import './styles/appointments-admin.css';
+
 import './styles/responsive.css';
 
-createRoot(document.getElementById('root')).render(
+
+createRoot(
+  document.getElementById(
+    'root',
+  ),
+).render(
+
   <StrictMode>
+
     <App />
+
   </StrictMode>,
+
 );

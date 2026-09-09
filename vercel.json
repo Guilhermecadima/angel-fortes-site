@@ -11,9 +11,13 @@
     {
       "source": "/admin",
       "destination": "/index.html"
+    },
+    {
+      "source": "/marcacoes",
+      "destination": "/index.html"
     }
   ],
-    "crons": [
+  "crons": [
     {
       "path": "/api/send-reminder",
       "schedule": "0 9 * * *"
