@@ -58,6 +58,55 @@ function escapeHtml(value) {
 
 
 /* =========================================================
+   FORMATAR DATA PT
+========================================================= */
+
+function formatBookingDate(
+  dateString,
+) {
+  try {
+    const [
+      year,
+      month,
+      day,
+    ] =
+      dateString
+        .split('-')
+        .map(Number);
+
+    const date =
+      new Date(
+        year,
+        month - 1,
+        day,
+        12,
+        0,
+        0,
+      );
+
+    return new Intl.DateTimeFormat(
+      'pt-PT',
+      {
+        weekday:
+          'long',
+
+        day:
+          'numeric',
+
+        month:
+          'long',
+
+        year:
+          'numeric',
+      },
+    ).format(date);
+  } catch {
+    return dateString;
+  }
+}
+
+
+/* =========================================================
    BOOKING
 ========================================================= */
 
@@ -163,9 +212,6 @@ export default async function handler(
 
     /* =====================================================
        DATA
-
-       Esta é uma das correções importantes.
-       Não basta validar YYYY-MM-DD.
     ===================================================== */
 
     if (
@@ -281,6 +327,7 @@ export default async function handler(
           'cancelled',
         );
 
+
     if (
       existingError
     ) {
@@ -296,6 +343,7 @@ export default async function handler(
       timeToMinutes(
         cleanTime,
       );
+
 
     const hasConflict =
       (
@@ -313,6 +361,7 @@ export default async function handler(
               appointment.duration,
             );
 
+
           if (
             !Number.isFinite(
               existingStart,
@@ -324,15 +373,20 @@ export default async function handler(
             return false;
           }
 
+
           return rangesOverlap(
             requestedStart,
+
             selectedService
               .duration,
+
             existingStart,
+
             existingDuration,
           );
         },
       );
+
 
     if (
       hasConflict
@@ -407,10 +461,7 @@ export default async function handler(
         supabaseError,
       );
 
-      /*
-       * 23P01 = overlap/exclusion constraint
-       * 23505 = unique constraint
-       */
+
       if (
         supabaseError.code ===
           '23P01' ||
@@ -423,6 +474,7 @@ export default async function handler(
         });
       }
 
+
       return res.status(500).json({
         message:
           `Erro Supabase: ${supabaseError.message}`,
@@ -431,19 +483,21 @@ export default async function handler(
 
 
     /* =====================================================
-       EMAIL
+       PREPARAR EMAILS
     ===================================================== */
 
-    let emailSent =
+    let adminEmailSent =
       false;
+
+    let customerEmailSent =
+      false;
+
 
     if (
       process.env
         .RESEND_API_KEY &&
       process.env
-        .FOLLOWUP_EMAIL_FROM &&
-      process.env
-        .BOOKING_EMAIL
+        .FOLLOWUP_EMAIL_FROM
     ) {
       const safeName =
         escapeHtml(
@@ -467,7 +521,9 @@ export default async function handler(
 
       const safeDate =
         escapeHtml(
-          cleanDate,
+          formatBookingDate(
+            cleanDate,
+          ),
         );
 
       const safeTime =
@@ -475,202 +531,562 @@ export default async function handler(
           cleanTime,
         );
 
-      const {
-        error:
-          emailError,
-      } =
-        await resend.emails.send({
-          from:
-            process.env
-              .FOLLOWUP_EMAIL_FROM,
+      const safePrice =
+        escapeHtml(
+          Number(
+            selectedService.price,
+          ).toFixed(2),
+        );
 
-          to:
-            process.env
-              .BOOKING_EMAIL,
 
-          replyTo:
-            cleanEmail,
+      /* ===================================================
+         EMAIL PARA O ANGEL
+      =================================================== */
 
-          subject:
-            `Nova marcação — ${selectedService.name}`,
+      if (
+        process.env
+          .BOOKING_EMAIL
+      ) {
+        try {
+          const {
+            error:
+              adminEmailError,
+          } =
+            await resend.emails.send({
+              from:
+                process.env
+                  .FOLLOWUP_EMAIL_FROM,
 
-          html: `
-            <div
-              style="
-                font-family:
-                  Arial,
-                  Helvetica,
-                  sans-serif;
-                max-width:600px;
-                margin:0 auto;
-                color:#111;
-              "
-            >
+              to:
+                process.env
+                  .BOOKING_EMAIL,
 
+              replyTo:
+                cleanEmail,
+
+              subject:
+                `Nova marcação — ${selectedService.name}`,
+
+              html: `
+                <div
+                  style="
+                    font-family:
+                      Arial,
+                      Helvetica,
+                      sans-serif;
+                    max-width:600px;
+                    margin:0 auto;
+                    color:#111;
+                  "
+                >
+
+                  <div
+                    style="
+                      padding:28px;
+                      background:#0b0b0b;
+                      color:#fff;
+                    "
+                  >
+
+                    <div
+                      style="
+                        margin-bottom:8px;
+                        color:#d4af37;
+                        font-size:12px;
+                        letter-spacing:2px;
+                        text-transform:uppercase;
+                      "
+                    >
+                      Barbearia Angel Fortes
+                    </div>
+
+                    <h1
+                      style="
+                        margin:0;
+                        font-size:28px;
+                      "
+                    >
+                      Nova marcação
+                    </h1>
+
+                  </div>
+
+
+                  <div
+                    style="
+                      padding:28px;
+                      border:1px solid #e6dfd2;
+                      border-top:0;
+                    "
+                  >
+
+                    <h3>
+                      Cliente
+                    </h3>
+
+                    <p>
+                      <strong>
+                        Nome:
+                      </strong>
+
+                      ${safeName}
+                    </p>
+
+                    <p>
+                      <strong>
+                        Telefone:
+                      </strong>
+
+                      ${safePhone}
+                    </p>
+
+                    <p>
+                      <strong>
+                        Email:
+                      </strong>
+
+                      ${safeEmail}
+                    </p>
+
+
+                    <hr
+                      style="
+                        border:0;
+                        border-top:1px solid #e6dfd2;
+                        margin:25px 0;
+                      "
+                    />
+
+
+                    <h3>
+                      Marcação
+                    </h3>
+
+                    <p>
+                      <strong>
+                        Serviço:
+                      </strong>
+
+                      ${safeService}
+                    </p>
+
+                    <p>
+                      <strong>
+                        Duração:
+                      </strong>
+
+                      ${selectedService.duration}
+                      minutos
+                    </p>
+
+                    <p>
+                      <strong>
+                        Data:
+                      </strong>
+
+                      ${safeDate}
+                    </p>
+
+                    <p>
+                      <strong>
+                        Hora:
+                      </strong>
+
+                      ${safeTime}
+                    </p>
+
+                    <p>
+                      <strong>
+                        Preço:
+                      </strong>
+
+                      ${safePrice} €
+                    </p>
+
+
+                    <hr
+                      style="
+                        border:0;
+                        border-top:1px solid #e6dfd2;
+                        margin:25px 0;
+                      "
+                    />
+
+
+                    <p
+                      style="
+                        color:#999;
+                        font-size:12px;
+                      "
+                    >
+                      Marcação efetuada através
+                      do website Angel Fortes.
+                    </p>
+
+                  </div>
+
+                </div>
+              `,
+            });
+
+
+          if (
+            adminEmailError
+          ) {
+            console.error(
+              'Erro Resend email admin:',
+              adminEmailError,
+            );
+          } else {
+            adminEmailSent =
+              true;
+          }
+        } catch (
+          adminEmailException
+        ) {
+          console.error(
+            'Erro ao enviar email para admin:',
+            adminEmailException,
+          );
+        }
+      }
+
+
+      /* ===================================================
+         EMAIL DE CONFIRMAÇÃO PARA O CLIENTE
+      =================================================== */
+
+      try {
+        const {
+          error:
+            customerEmailError,
+        } =
+          await resend.emails.send({
+            from:
+              process.env
+                .FOLLOWUP_EMAIL_FROM,
+
+            to:
+              cleanEmail,
+
+            replyTo:
+              process.env
+                .BOOKING_EMAIL ||
+              undefined,
+
+            subject:
+              'Marcação confirmada — Angel Fortes',
+
+            html: `
               <div
                 style="
-                  padding:28px;
-                  background:#0b0b0b;
-                  color:#fff;
+                  font-family:
+                    Arial,
+                    Helvetica,
+                    sans-serif;
+                  max-width:600px;
+                  margin:0 auto;
+                  background:#f6f3ec;
+                  color:#111;
                 "
               >
 
                 <div
                   style="
-                    margin-bottom:8px;
-                    color:#d4af37;
-                    font-size:12px;
-                    letter-spacing:2px;
-                    text-transform:uppercase;
+                    padding:32px 28px;
+                    background:#0b0b0b;
+                    color:#fff;
+                    text-align:center;
                   "
                 >
-                  Barbearia Angel Fortes
+
+                  <div
+                    style="
+                      margin-bottom:10px;
+                      color:#d4af37;
+                      font-size:12px;
+                      font-weight:bold;
+                      letter-spacing:2px;
+                      text-transform:uppercase;
+                    "
+                  >
+                    Barbearia
+                  </div>
+
+
+                  <h1
+                    style="
+                      margin:0;
+                      font-size:30px;
+                    "
+                  >
+                    ANGEL FORTES
+                  </h1>
+
                 </div>
 
-                <h1
+
+                <div
                   style="
-                    margin:0;
-                    font-size:28px;
+                    padding:32px 28px;
+                    background:#fff;
+                    border:
+                      1px solid
+                      #e6dfd2;
+                    border-top:0;
                   "
                 >
-                  Nova marcação
-                </h1>
+
+                  <p
+                    style="
+                      margin-top:0;
+                      font-size:18px;
+                    "
+                  >
+                    Olá
+                    <strong>
+                      ${safeName}
+                    </strong>,
+                  </p>
+
+
+                  <p
+                    style="
+                      color:#555;
+                      line-height:1.6;
+                    "
+                  >
+                    A tua marcação está
+                    confirmada.
+                    Esperamos por ti na
+                    Barbearia Angel Fortes.
+                  </p>
+
+
+                  <div
+                    style="
+                      margin:
+                        28px 0;
+                      padding:
+                        22px;
+                      background:
+                        #f8f5ed;
+                      border-left:
+                        4px solid
+                        #d4af37;
+                    "
+                  >
+
+                    <div
+                      style="
+                        margin-bottom:
+                          16px;
+                      "
+                    >
+
+                      <div
+                        style="
+                          color:#8a7d62;
+                          font-size:11px;
+                          font-weight:bold;
+                          letter-spacing:1px;
+                          text-transform:uppercase;
+                        "
+                      >
+                        Serviço
+                      </div>
+
+                      <div
+                        style="
+                          margin-top:4px;
+                          font-size:18px;
+                          font-weight:bold;
+                        "
+                      >
+                        ${safeService}
+                      </div>
+
+                    </div>
+
+
+                    <div
+                      style="
+                        margin-bottom:
+                          16px;
+                      "
+                    >
+
+                      <div
+                        style="
+                          color:#8a7d62;
+                          font-size:11px;
+                          font-weight:bold;
+                          letter-spacing:1px;
+                          text-transform:uppercase;
+                        "
+                      >
+                        Data
+                      </div>
+
+                      <div
+                        style="
+                          margin-top:4px;
+                          font-size:17px;
+                        "
+                      >
+                        ${safeDate}
+                      </div>
+
+                    </div>
+
+
+                    <div
+                      style="
+                        margin-bottom:
+                          16px;
+                      "
+                    >
+
+                      <div
+                        style="
+                          color:#8a7d62;
+                          font-size:11px;
+                          font-weight:bold;
+                          letter-spacing:1px;
+                          text-transform:uppercase;
+                        "
+                      >
+                        Hora
+                      </div>
+
+                      <div
+                        style="
+                          margin-top:4px;
+                          font-size:26px;
+                          font-weight:bold;
+                        "
+                      >
+                        ${safeTime}
+                      </div>
+
+                    </div>
+
+
+                    <div>
+
+                      <div
+                        style="
+                          color:#8a7d62;
+                          font-size:11px;
+                          font-weight:bold;
+                          letter-spacing:1px;
+                          text-transform:uppercase;
+                        "
+                      >
+                        Valor
+                      </div>
+
+                      <div
+                        style="
+                          margin-top:4px;
+                          font-size:17px;
+                          font-weight:bold;
+                        "
+                      >
+                        ${safePrice} €
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  <p
+                    style="
+                      color:#555;
+                      line-height:1.6;
+                    "
+                  >
+                    Se precisares de alterar
+                    ou cancelar a tua marcação,
+                    entra em contacto connosco.
+                  </p>
+
+
+                  <div
+                    style="
+                      margin-top:28px;
+                      padding-top:22px;
+                      border-top:
+                        1px solid
+                        #e6dfd2;
+                    "
+                  >
+
+                    <strong>
+                      Barbearia Angel Fortes
+                    </strong>
+
+                    <p
+                      style="
+                        margin:
+                          8px 0 0;
+                        color:#777;
+                        font-size:13px;
+                        line-height:1.5;
+                      "
+                    >
+                      Av. Rui Grácio N.º 53 A
+                      <br />
+                      Corroios
+                    </p>
+
+                  </div>
+
+
+                  <p
+                    style="
+                      margin:
+                        28px 0 0;
+                      color:#aaa;
+                      font-size:11px;
+                      text-align:center;
+                    "
+                  >
+                    Este email foi enviado
+                    automaticamente após a tua
+                    marcação em angelfortes.pt.
+                  </p>
+
+                </div>
 
               </div>
+            `,
+          });
 
 
-              <div
-                style="
-                  padding:28px;
-                  border:1px solid #e6dfd2;
-                  border-top:0;
-                "
-              >
-
-                <h3>
-                  Cliente
-                </h3>
-
-                <p>
-                  <strong>
-                    Nome:
-                  </strong>
-
-                  ${safeName}
-                </p>
-
-                <p>
-                  <strong>
-                    Telefone:
-                  </strong>
-
-                  ${safePhone}
-                </p>
-
-                <p>
-                  <strong>
-                    Email:
-                  </strong>
-
-                  ${safeEmail}
-                </p>
-
-
-                <hr
-                  style="
-                    border:0;
-                    border-top:1px solid #e6dfd2;
-                    margin:25px 0;
-                  "
-                />
-
-
-                <h3>
-                  Marcação
-                </h3>
-
-                <p>
-                  <strong>
-                    Serviço:
-                  </strong>
-
-                  ${safeService}
-                </p>
-
-                <p>
-                  <strong>
-                    Duração:
-                  </strong>
-
-                  ${selectedService.duration}
-                  minutos
-                </p>
-
-                <p>
-                  <strong>
-                    Data:
-                  </strong>
-
-                  ${safeDate}
-                </p>
-
-                <p>
-                  <strong>
-                    Hora:
-                  </strong>
-
-                  ${safeTime}
-                </p>
-
-                <p>
-                  <strong>
-                    Preço:
-                  </strong>
-
-                  ${selectedService.price} €
-                </p>
-
-
-                <hr
-                  style="
-                    border:0;
-                    border-top:1px solid #e6dfd2;
-                    margin:25px 0;
-                  "
-                />
-
-
-                <p
-                  style="
-                    color:#999;
-                    font-size:12px;
-                  "
-                >
-                  Marcação efetuada através
-                  do website Angel Fortes.
-                </p>
-
-              </div>
-
-            </div>
-          `,
-        });
-
-
-      if (
-        emailError
+        if (
+          customerEmailError
+        ) {
+          console.error(
+            'Erro Resend email cliente:',
+            customerEmailError,
+          );
+        } else {
+          customerEmailSent =
+            true;
+        }
+      } catch (
+        customerEmailException
       ) {
         console.error(
-          'Erro Resend:',
-          emailError,
+          'Erro ao enviar confirmação ao cliente:',
+          customerEmailException,
         );
-      } else {
-        emailSent =
-          true;
       }
     } else {
       console.warn(
-        'Email não enviado: variáveis Resend em falta.',
+        'Emails não enviados: RESEND_API_KEY ou FOLLOWUP_EMAIL_FROM em falta.',
       );
     }
 
@@ -686,7 +1102,12 @@ export default async function handler(
       bookingId:
         appointment.id,
 
-      emailSent,
+      emailSent:
+        adminEmailSent,
+
+      adminEmailSent,
+
+      customerEmailSent,
     });
   } catch (error) {
     console.error(
