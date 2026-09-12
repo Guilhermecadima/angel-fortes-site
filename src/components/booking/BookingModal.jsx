@@ -842,6 +842,25 @@ export default function BookingModal({
             horários disponíveis próximos.
           </p>
 
+          <a
+            href="/loja"
+            className="booking-store-link"
+          >
+            <span className="booking-store-link-copy">
+              <small>
+                Produtos Angel Fortes
+              </small>
+
+              <strong>
+                Vê a nossa loja
+              </strong>
+            </span>
+
+            <span className="booking-store-link-arrow">
+              →
+            </span>
+          </a>
+
         </div>
 
 

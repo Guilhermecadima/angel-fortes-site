@@ -1900,3 +1900,31 @@ footer {
   opacity: 0.85;
   text-align: right;
 }
+
+/* =========================================================
+   HERO — 3 REDES SOCIAIS
+========================================================= */
+
+@media (max-width: 650px) {
+
+  .hero-socials {
+    gap: 8px;
+  }
+
+  .hero-socials a {
+    gap: 4px;
+
+    font-size: 9px;
+
+    letter-spacing: 0.03em;
+  }
+
+  .hero-socials a > span {
+    font-size: 14px;
+  }
+
+  .hero-social-divider {
+    height: 13px;
+  }
+
+}

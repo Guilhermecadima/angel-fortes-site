@@ -1585,3 +1585,146 @@ input[type="time"] {
 
   background: transparent !important;
 }
+
+/* =========================================================
+   BOOKING — LINK PARA A LOJA
+========================================================= */
+
+.booking-store-link {
+  width: 100%;
+  max-width: 390px;
+
+  margin: 14px auto 0;
+  padding: 11px 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  box-sizing: border-box;
+
+  background: #111;
+
+  border:
+    1px solid rgba(212, 175, 55, 0.45);
+
+  color: #fff;
+
+  text-decoration: none;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.booking-store-link:hover {
+  background: #181818;
+
+  border-color: #d4af37;
+
+  transform: translateY(-1px);
+}
+
+.booking-store-link-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 1px;
+}
+
+.booking-store-link-copy small {
+  color: #d4af37;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.09em;
+
+  text-transform: uppercase;
+}
+
+.booking-store-link-copy strong {
+  color: #fff;
+
+  font-family:
+    "Oswald",
+    sans-serif;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  letter-spacing: 0.02em;
+
+  text-transform: uppercase;
+}
+
+.booking-store-link-arrow {
+  color: #d4af37;
+
+  font-size: 23px;
+  line-height: 1;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  .booking-store-link {
+    max-width: 290px;
+
+    margin-top: 9px;
+
+    padding: 7px 11px;
+
+    min-height: 38px;
+  }
+
+  .booking-store-link-copy {
+    gap: 0;
+  }
+
+  .booking-store-link-copy small {
+    font-size: 7.5px;
+  }
+
+  .booking-store-link-copy strong {
+    font-size: 13px;
+  }
+
+  .booking-store-link-arrow {
+    font-size: 18px;
+  }
+
+}
+
+/* =========================================================
+   BOOKING — AJUSTES FINAIS MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .booking-head h2 {
+    font-size: 30px;
+    line-height: 0.95;
+    margin-top: 3px;
+    margin-bottom: 6px;
+  }
+
+  .booking-head-description {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .booking-store-link {
+    margin-top: 6px;
+    padding: 6px 11px;
+    min-height: 36px;
+  }
+
+}
