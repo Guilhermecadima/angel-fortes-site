@@ -423,14 +423,16 @@ export default async function handler(
                 normalizedPhone,
 
               body:
-`Já passaram 20 dias desde a sua visita à Barbearia Angel Fortes. ✂️
+        `Já passaram 20 dias desde a sua visita à Barbearia Angel Fortes. ✂️
 
-Está na altura de renovar o visual e manter uma imagem sempre cuidada.
+        Está na altura de renovar o visual e manter uma imagem sempre cuidada.
 
-Esperamos por si.
+        Marque já a sua próxima visita:
+        https://www.angelfortes.pt/#marcar
 
-Barbearia Angel Fortes`,
+        Esperamos por si.
 
+        Barbearia Angel Fortes`,
             });
 
 

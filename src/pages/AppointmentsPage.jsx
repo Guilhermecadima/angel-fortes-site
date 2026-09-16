@@ -5,10 +5,6 @@ import {
 } from 'react';
 
 import {
-  Link,
-} from 'react-router-dom';
-
-import {
   isSupabaseConfigured,
 } from '../lib/supabase';
 
@@ -19,429 +15,1220 @@ import {
   subscribeToAuth,
 } from '../services/auth';
 
+import {
+  services,
+} from '../data/services';
 
-const STATUS_LABELS = {
-  pending: 'Pendente',
-  confirmed: 'Confirmada',
-  completed: 'Concluída',
-  cancelled: 'Cancelada',
-  no_show: 'Não apareceu',
-};
+import '../styles/appointments-admin.css';
 
 
-function parseLocalDate(
-  dateString,
-) {
+const HOUR_START = 9;
+const HOUR_END = 19;
+const HOUR_HEIGHT = 72;
+
+
+/* =========================================================
+   DATE HELPERS
+========================================================= */
+
+function cloneDate(date) {
   return new Date(
-    `${dateString}T12:00:00`,
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    12,
+    0,
+    0,
+    0,
   );
 }
 
 
-function formatDate(
-  dateString,
+function addDays(
+  date,
+  amount,
 ) {
-  const date =
-    parseLocalDate(
-      dateString,
-    );
+  const next =
+    cloneDate(date);
 
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return dateString;
-  }
+  next.setDate(
+    next.getDate() +
+      amount,
+  );
 
-  return new Intl.DateTimeFormat(
-    'pt-PT',
-    {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    },
-  ).format(date);
+  return next;
 }
 
 
-function formatShortDate(
-  dateString,
+function addMonths(
+  date,
+  amount,
 ) {
-  const date =
-    parseLocalDate(
-      dateString,
-    );
+  const next =
+    cloneDate(date);
 
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return dateString;
-  }
+  next.setDate(1);
 
-  return new Intl.DateTimeFormat(
-    'pt-PT',
-    {
-      day: '2-digit',
-      month: '2-digit',
-    },
-  ).format(date);
+  next.setMonth(
+    next.getMonth() +
+      amount,
+  );
+
+  return next;
 }
 
 
-function formatTime(time) {
+function startOfWeek(date) {
+  const result =
+    cloneDate(date);
+
+  const weekday =
+    result.getDay();
+
+  const distance =
+    weekday === 0
+      ? -6
+      : 1 - weekday;
+
+  result.setDate(
+    result.getDate() +
+      distance,
+  );
+
+  return result;
+}
+
+
+function dateKey(date) {
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1,
+    ).padStart(
+      2,
+      '0',
+    );
+
+  const day =
+    String(
+      date.getDate(),
+    ).padStart(
+      2,
+      '0',
+    );
+
+  return (
+    `${year}-${month}-${day}`
+  );
+}
+
+
+function timeToMinutes(value) {
+  const [
+    hours,
+    minutes,
+  ] =
+    String(
+      value || '00:00',
+    )
+      .slice(0, 5)
+      .split(':')
+      .map(Number);
+
+  return (
+    (hours || 0) *
+      60 +
+    (minutes || 0)
+  );
+}
+
+
+function shortTime(value) {
   return String(
-    time || '',
-  ).slice(0, 5);
+    value || '',
+  ).slice(
+    0,
+    5,
+  );
 }
 
 
-function formatPrice(price) {
-  const numericPrice =
-    Number(price);
-
-  if (
-    !Number.isFinite(
-      numericPrice,
-    )
-  ) {
+function capitalize(value) {
+  if (!value) {
     return '';
   }
 
-  return new Intl.NumberFormat(
-    'pt-PT',
-    {
-      style: 'currency',
-      currency: 'EUR',
-    },
-  ).format(
-    numericPrice,
+  return (
+    value
+      .charAt(0)
+      .toUpperCase() +
+    value.slice(1)
   );
 }
 
 
-function getPortugalToday() {
-  const parts =
-    new Intl.DateTimeFormat(
-      'en-GB',
-      {
-        timeZone:
-          'Europe/Lisbon',
+function isWednesday(date) {
+  return (
+    date.getDay() === 3
+  );
+}
 
-        year:
-          'numeric',
+
+/* =========================================================
+   LABELS
+========================================================= */
+
+function dayName(date) {
+  return new Intl
+    .DateTimeFormat(
+      'pt-PT',
+      {
+        weekday:
+          'short',
+      },
+    )
+    .format(date)
+    .replace(
+      '.',
+      '',
+    );
+}
+
+
+function dayNumber(date) {
+  return new Intl
+    .DateTimeFormat(
+      'pt-PT',
+      {
+        day:
+          '2-digit',
 
         month:
           '2-digit',
-
-        day:
-          '2-digit',
       },
-    ).formatToParts(
-      new Date(),
+    )
+    .format(date);
+}
+
+
+function monthLabel(date) {
+  return capitalize(
+    new Intl
+      .DateTimeFormat(
+        'pt-PT',
+        {
+          month:
+            'long',
+
+          year:
+            'numeric',
+        },
+      )
+      .format(date),
+  );
+}
+
+
+function dayLabel(date) {
+  return capitalize(
+    new Intl
+      .DateTimeFormat(
+        'pt-PT',
+        {
+          weekday:
+            'long',
+
+          day:
+            '2-digit',
+
+          month:
+            'long',
+
+          year:
+            'numeric',
+        },
+      )
+      .format(date),
+  );
+}
+
+
+function weekLabel(date) {
+  const start =
+    startOfWeek(date);
+
+  const end =
+    addDays(
+      start,
+      6,
     );
 
-  const get =
-    (type) =>
-      parts.find(
-        (part) =>
-          part.type === type,
-      )?.value;
+  const startText =
+    new Intl
+      .DateTimeFormat(
+        'pt-PT',
+        {
+          day:
+            '2-digit',
+
+          month:
+            'short',
+        },
+      )
+      .format(start);
+
+  const endText =
+    new Intl
+      .DateTimeFormat(
+        'pt-PT',
+        {
+          day:
+            '2-digit',
+
+          month:
+            'short',
+
+          year:
+            'numeric',
+        },
+      )
+      .format(end);
 
   return (
-    `${get('year')}-` +
-    `${get('month')}-` +
-    `${get('day')}`
+    `${startText} – ${endText}`
   );
 }
 
 
-function groupByDate(
-  appointments,
-) {
-  return appointments.reduce(
-    (
-      groups,
-      appointment,
-    ) => {
-      const key =
-        appointment
-          .appointment_date;
+/* =========================================================
+   LOGIN
+========================================================= */
 
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-
-      groups[key].push(
-        appointment,
-      );
-
-      return groups;
-    },
-    {},
-  );
-}
-
-
-/* =========================================
-   LOGIN MARCAÇÕES
-========================================= */
-
-function AppointmentsLogin({
-  onSuccess,
+function Login({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  loading,
+  error,
+  onSubmit,
 }) {
-  const [
-    form,
-    setForm,
-  ] = useState({
-    email: '',
-    password: '',
-  });
-
-  const [
-    sending,
-    setSending,
-  ] = useState(false);
-
-  const [
-    error,
-    setError,
-  ] = useState('');
-
-
-  const submit =
-    async (event) => {
-      event.preventDefault();
-
-      setSending(true);
-      setError('');
-
-      try {
-        const session =
-          await signInAdmin(
-            form.email,
-            form.password,
-          );
-
-        onSuccess(session);
-      } catch (err) {
-        console.error(err);
-
-        setError(
-          'Email ou password incorretos.',
-        );
-      } finally {
-        setSending(false);
-      }
-    };
-
-
   return (
-    <div className="appointments-login-page">
+    <main className="appointments-login-page">
 
       <form
         className="appointments-login-card"
-        onSubmit={submit}
+        onSubmit={
+          onSubmit
+        }
       >
-
-        <div className="appointments-login-mark">
-          AF
+        <div className="appointments-login-brand">
+          ANGEL FORTES
         </div>
 
+        <h1>
+          Marcações
+        </h1>
 
-        <div>
-
-          <p className="appointments-kicker">
-            Área privada
-          </p>
-
-          <h1>
-            Marcações
-          </h1>
-
-          <p>
-            Entra para veres as
-            próximas marcações da
-            barbearia.
-          </p>
-
-        </div>
+        <p>
+          Área privada da barbearia.
+        </p>
 
 
         <label>
-
-          <span>
-            Email
-          </span>
+          Email
 
           <input
             type="email"
-            required
-            autoComplete="email"
-            value={form.email}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                email:
-                  event.target.value,
-              })
+            value={email}
+            onChange={
+              (event) =>
+                setEmail(
+                  event.target
+                    .value,
+                )
             }
+            autoComplete="email"
+            required
           />
-
         </label>
 
 
         <label>
-
-          <span>
-            Password
-          </span>
+          Palavra-passe
 
           <input
             type="password"
-            required
-            autoComplete="current-password"
-            value={form.password}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                password:
-                  event.target.value,
-              })
+            value={password}
+            onChange={
+              (event) =>
+                setPassword(
+                  event.target
+                    .value,
+                )
             }
+            autoComplete="current-password"
+            required
           />
-
         </label>
 
 
         {error && (
-          <p className="appointments-form-error">
+          <div
+            className="appointments-error"
+            role="alert"
+          >
             {error}
-          </p>
+          </div>
         )}
 
 
         <button
-          className="btn btn-dark full"
           type="submit"
-          disabled={sending}
+          disabled={
+            loading
+          }
         >
-          {sending
+          {loading
             ? 'A entrar...'
             : 'Entrar'}
         </button>
-
-
-        <Link
-          className="appointments-login-back"
-          to="/"
-        >
-          Voltar ao site
-        </Link>
-
       </form>
+
+    </main>
+  );
+}
+
+
+/* =========================================================
+   MARCAÇÃO NO CALENDÁRIO
+========================================================= */
+
+function AppointmentEvent({
+  appointment,
+  onClick,
+}) {
+  const startMinutes =
+    timeToMinutes(
+      appointment
+        .appointment_time,
+    );
+
+  const calendarStart =
+    HOUR_START * 60;
+
+  const rawTop =
+    (
+      (
+        startMinutes -
+        calendarStart
+      ) /
+      60
+    ) *
+    HOUR_HEIGHT;
+
+  const top =
+    Math.max(
+      0,
+      rawTop,
+    );
+
+  const duration =
+    Number(
+      appointment.duration,
+    ) || 20;
+
+  const height =
+    Math.max(
+      30,
+
+      (
+        duration /
+        60
+      ) *
+        HOUR_HEIGHT,
+    );
+
+  return (
+    <button
+      type="button"
+      className="calendar-appointment"
+      style={{
+        top:
+          `${top}px`,
+
+        height:
+          `${height}px`,
+      }}
+      onClick={() =>
+        onClick(
+          appointment,
+        )
+      }
+      title={
+        `${appointment.name} — ${appointment.service}`
+      }
+    >
+      <strong>
+        {shortTime(
+          appointment
+            .appointment_time,
+        )}
+      </strong>
+
+      <span>
+        {
+          appointment.name
+        }
+      </span>
+
+      <small>
+        {
+          appointment.service
+        }
+      </small>
+    </button>
+  );
+}
+
+
+/* =========================================================
+   QUARTA À TARDE
+========================================================= */
+
+function WednesdayClosedBlock() {
+  const top =
+    (
+      13 -
+      HOUR_START
+    ) *
+    HOUR_HEIGHT;
+
+  const height =
+    (
+      HOUR_END -
+      13
+    ) *
+    HOUR_HEIGHT;
+
+  return (
+    <div
+      className="calendar-closed-block"
+      style={{
+        top:
+          `${top}px`,
+
+        height:
+          `${height}px`,
+      }}
+    >
+      <span>
+        Tarde fechada
+      </span>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   SEMANA
+========================================================= */
+
+function WeekView({
+  cursor,
+  appointmentsByDate,
+  onSelect,
+}) {
+  const start =
+    startOfWeek(
+      cursor,
+    );
+
+  const days =
+    Array.from(
+      {
+        length: 7,
+      },
+
+      (
+        _,
+        index,
+      ) =>
+        addDays(
+          start,
+          index,
+        ),
+    );
+
+  const hours =
+    Array.from(
+      {
+        length:
+          HOUR_END -
+          HOUR_START +
+          1,
+      },
+
+      (
+        _,
+        index,
+      ) =>
+        HOUR_START +
+        index,
+    );
+
+  const today =
+    dateKey(
+      new Date(),
+    );
+
+  const bodyHeight =
+    (
+      HOUR_END -
+      HOUR_START
+    ) *
+    HOUR_HEIGHT;
+
+
+  return (
+    <div className="calendar-scroll">
+
+      <div className="week-calendar">
+
+        <div className="week-header">
+
+          <div className="week-header-spacer" />
+
+
+          {days.map(
+            (day) => {
+              const key =
+                dateKey(
+                  day,
+                );
+
+              return (
+                <div
+                  key={key}
+                  className={`week-day-title ${
+                    key ===
+                    today
+                      ? 'today'
+                      : ''
+                  }`}
+                >
+                  <strong>
+                    {
+                      dayName(
+                        day,
+                      )
+                    }
+                  </strong>
+
+                  <span>
+                    {
+                      dayNumber(
+                        day,
+                      )
+                    }
+                  </span>
+                </div>
+              );
+            },
+          )}
+
+        </div>
+
+
+        <div className="week-body">
+
+          <div
+            className="week-time-axis"
+            style={{
+              height:
+                `${bodyHeight}px`,
+            }}
+          >
+            {hours.map(
+              (hour) => (
+                <div
+                  key={
+                    hour
+                  }
+                  className="week-time-label"
+                  style={{
+                    top:
+                      (
+                        hour -
+                        HOUR_START
+                      ) *
+                      HOUR_HEIGHT,
+                  }}
+                >
+                  {String(
+                    hour,
+                  ).padStart(
+                    2,
+                    '0',
+                  )}
+                </div>
+              ),
+            )}
+          </div>
+
+
+          {days.map(
+            (day) => {
+              const key =
+                dateKey(
+                  day,
+                );
+
+              const appointments =
+                appointmentsByDate[
+                  key
+                ] || [];
+
+              return (
+                <div
+                  key={key}
+                  className={`week-day-column ${
+                    key ===
+                    today
+                      ? 'today'
+                      : ''
+                  }`}
+                  style={{
+                    height:
+                      `${bodyHeight}px`,
+                  }}
+                >
+
+                  {isWednesday(
+                    day,
+                  ) && (
+                    <WednesdayClosedBlock />
+                  )}
+
+
+                  {appointments.map(
+                    (
+                      appointment,
+                    ) => (
+                      <AppointmentEvent
+                        key={
+                          appointment.id
+                        }
+                        appointment={
+                          appointment
+                        }
+                        onClick={
+                          onSelect
+                        }
+                      />
+                    ),
+                  )}
+
+                </div>
+              );
+            },
+          )}
+
+        </div>
+
+      </div>
 
     </div>
   );
 }
 
 
-/* =========================================
-   PÁGINA
-========================================= */
+/* =========================================================
+   MÊS
+========================================================= */
+
+function MonthView({
+  cursor,
+  appointmentsByDate,
+  onSelect,
+}) {
+  const firstDay =
+    new Date(
+      cursor
+        .getFullYear(),
+
+      cursor
+        .getMonth(),
+
+      1,
+      12,
+    );
+
+  const firstVisible =
+    startOfWeek(
+      firstDay,
+    );
+
+  const days =
+    Array.from(
+      {
+        length: 42,
+      },
+
+      (
+        _,
+        index,
+      ) =>
+        addDays(
+          firstVisible,
+          index,
+        ),
+    );
+
+  const today =
+    dateKey(
+      new Date(),
+    );
+
+
+  return (
+    <div className="calendar-scroll">
+
+      <div className="month-calendar">
+
+        <div className="month-weekdays">
+
+          {[
+            'seg.',
+            'ter.',
+            'qua.',
+            'qui.',
+            'sex.',
+            'sáb.',
+            'dom.',
+          ].map(
+            (day) => (
+              <div
+                key={
+                  day
+                }
+              >
+                {day}
+              </div>
+            ),
+          )}
+
+        </div>
+
+
+        <div className="month-grid">
+
+          {days.map(
+            (day) => {
+              const key =
+                dateKey(
+                  day,
+                );
+
+              const events =
+                appointmentsByDate[
+                  key
+                ] || [];
+
+              const outside =
+                day
+                  .getMonth() !==
+                cursor
+                  .getMonth();
+
+              return (
+                <div
+                  key={key}
+                  className={`month-day ${
+                    outside
+                      ? 'outside'
+                      : ''
+                  } ${
+                    key ===
+                    today
+                      ? 'today'
+                      : ''
+                  }`}
+                >
+
+                  <div className="month-day-top">
+
+                    <span className="month-day-number">
+                      {
+                        day
+                          .getDate()
+                      }
+                    </span>
+
+
+                    {isWednesday(
+                      day,
+                    ) && (
+                      <small className="month-closed-note">
+                        tarde fechada
+                      </small>
+                    )}
+
+                  </div>
+
+
+                  <div className="month-events">
+
+                    {events
+                      .slice(
+                        0,
+                        5,
+                      )
+                      .map(
+                        (
+                          appointment,
+                        ) => (
+                          <button
+                            key={
+                              appointment.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              onSelect(
+                                appointment,
+                              )
+                            }
+                          >
+                            <strong>
+                              {shortTime(
+                                appointment
+                                  .appointment_time,
+                              )}
+                            </strong>
+
+                            <span>
+                              {
+                                appointment.name
+                              }
+                            </span>
+                          </button>
+                        ),
+                      )}
+
+
+                    {events.length >
+                      5 && (
+                      <small className="month-more">
+                        +
+                        {
+                          events.length -
+                          5
+                        }{' '}
+                        marcações
+                      </small>
+                    )}
+
+                  </div>
+
+                </div>
+              );
+            },
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   DIA
+========================================================= */
+
+function DayView({
+  cursor,
+  appointmentsByDate,
+  onSelect,
+}) {
+  const key =
+    dateKey(
+      cursor,
+    );
+
+  const appointments =
+    appointmentsByDate[
+      key
+    ] || [];
+
+  const hours =
+    Array.from(
+      {
+        length:
+          HOUR_END -
+          HOUR_START +
+          1,
+      },
+
+      (
+        _,
+        index,
+      ) =>
+        HOUR_START +
+        index,
+    );
+
+  const bodyHeight =
+    (
+      HOUR_END -
+      HOUR_START
+    ) *
+    HOUR_HEIGHT;
+
+
+  return (
+    <div className="day-calendar">
+
+      <div className="day-calendar-label">
+        {
+          dayLabel(
+            cursor,
+          )
+        }
+      </div>
+
+
+      <div className="day-calendar-body">
+
+        <div
+          className="day-time-axis"
+          style={{
+            height:
+              `${bodyHeight}px`,
+          }}
+        >
+
+          {hours.map(
+            (hour) => (
+              <div
+                key={
+                  hour
+                }
+                className="day-time-label"
+                style={{
+                  top:
+                    (
+                      hour -
+                      HOUR_START
+                    ) *
+                    HOUR_HEIGHT,
+                }}
+              >
+                {String(
+                  hour,
+                ).padStart(
+                  2,
+                  '0',
+                )}
+              </div>
+            ),
+          )}
+
+        </div>
+
+
+        <div
+          className="day-events-column"
+          style={{
+            height:
+              `${bodyHeight}px`,
+          }}
+        >
+
+          {isWednesday(
+            cursor,
+          ) && (
+            <WednesdayClosedBlock />
+          )}
+
+
+          {appointments.map(
+            (
+              appointment,
+            ) => (
+              <AppointmentEvent
+                key={
+                  appointment.id
+                }
+                appointment={
+                  appointment
+                }
+                onClick={
+                  onSelect
+                }
+              />
+            ),
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function AppointmentsPage() {
+
+  /* SESSION */
+
   const [
     session,
     setSession,
-  ] = useState(null);
+  ] =
+    useState(null);
 
   const [
-    authLoading,
-    setAuthLoading,
-  ] = useState(true);
+    checkingSession,
+    setCheckingSession,
+  ] =
+    useState(true);
+
+
+  /* LOGIN */
+
+  const [
+    loginLoading,
+    setLoginLoading,
+  ] =
+    useState(false);
+
+  const [
+    email,
+    setEmail,
+  ] =
+    useState('');
+
+  const [
+    password,
+    setPassword,
+  ] =
+    useState('');
+
+
+  /* DATA */
 
   const [
     appointments,
     setAppointments,
-  ] = useState([]);
+  ] =
+    useState([]);
 
   const [
-    loading,
-    setLoading,
-  ] = useState(false);
+    loadingAppointments,
+    setLoadingAppointments,
+  ] =
+    useState(false);
 
   const [
     error,
     setError,
-  ] = useState('');
+  ] =
+    useState('');
 
-  const [
-    query,
-    setQuery,
-  ] = useState('');
+
+  /* CALENDAR */
 
   const [
     view,
     setView,
-  ] = useState(
-    'upcoming',
-  );
+  ] =
+    useState(
+      'week',
+    );
 
   const [
-    lastUpdated,
-    setLastUpdated,
-  ] = useState(null);
+    cursor,
+    setCursor,
+  ] =
+    useState(
+      cloneDate(
+        new Date(),
+      ),
+    );
 
 
-  const today =
-    getPortugalToday();
+  /* EDITOR */
+
+  const [
+    selectedAppointment,
+    setSelectedAppointment,
+  ] =
+    useState(null);
+
+  const [
+    editForm,
+    setEditForm,
+  ] =
+    useState(null);
+
+  const [
+    savingAppointment,
+    setSavingAppointment,
+  ] =
+    useState(false);
 
 
-  /* =====================================
-     AUTH
-  ===================================== */
+  /* =======================================================
+     SESSION
+  ======================================================= */
 
   useEffect(() => {
-    if (
-      !isSupabaseConfigured
-    ) {
-      setAuthLoading(false);
-
-      return undefined;
-    }
-
-    let mounted =
+    let active =
       true;
 
+    async function loadSession() {
+      try {
+        const currentSession =
+          await getAdminSession();
 
-    getAdminSession()
-      .then(
-        (
-          currentSession,
-        ) => {
-          if (mounted) {
-            setSession(
-              currentSession,
-            );
-          }
-        },
-      )
-      .catch(
-        (err) => {
-          console.error(err);
-        },
-      )
-      .finally(() => {
-        if (mounted) {
-          setAuthLoading(
+        if (active) {
+          setSession(
+            currentSession,
+          );
+        }
+
+      } catch (err) {
+        console.error(
+          err,
+        );
+
+        if (active) {
+          setSession(
+            null,
+          );
+        }
+
+      } finally {
+        if (active) {
+          setCheckingSession(
             false,
           );
         }
-      });
+      }
+    }
+
+
+    loadSession();
 
 
     const unsubscribe =
@@ -449,6 +1236,10 @@ export default function AppointmentsPage() {
         (
           nextSession,
         ) => {
+          if (!active) {
+            return;
+          }
+
           setSession(
             nextSession,
           );
@@ -457,324 +1248,830 @@ export default function AppointmentsPage() {
 
 
     return () => {
-      mounted =
+      active =
         false;
 
       unsubscribe();
     };
+
   }, []);
 
 
-  /* =====================================
-     CARREGAR MARCAÇÕES
-  ===================================== */
+  /* =======================================================
+     LOAD APPOINTMENTS
+  ======================================================= */
 
-  const loadAppointments =
-    async (
-      activeSession =
-        session,
-    ) => {
+  async function loadAppointments(
+    currentSession =
+      session,
+  ) {
+    if (
+      !currentSession
+        ?.access_token
+    ) {
+      return;
+    }
+
+    setLoadingAppointments(
+      true,
+    );
+
+    setError('');
+
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/appointments',
+          {
+            headers: {
+              Authorization:
+                `Bearer ${currentSession.access_token}`,
+            },
+          },
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(
+            () => null,
+          );
+
+
       if (
-        !activeSession
-          ?.access_token
+        response.status ===
+          401 ||
+        response.status ===
+          403
       ) {
-        return;
+        await signOutAdmin();
+
+        setSession(
+          null,
+        );
+
+        throw new Error(
+          'A sessão expirou. Entra novamente.',
+        );
       }
 
-      setLoading(true);
-      setError('');
 
-      try {
-        const response =
-          await fetch(
-            '/api/admin/appointments',
-            {
-              method:
-                'GET',
+      if (
+        !response.ok
+      ) {
+        throw new Error(
+          data?.message ||
+            'Não foi possível carregar as marcações.',
+        );
+      }
 
-              headers: {
-                Authorization:
-                  `Bearer ${activeSession.access_token}`,
-              },
+
+      const rows =
+        Array.isArray(
+          data
+            ?.appointments,
+        )
+          ? data.appointments
+
+          : Array.isArray(
+              data,
+            )
+            ? data
+
+            : [];
+
+
+      setAppointments(
+        rows,
+      );
+
+    } catch (err) {
+      console.error(
+        err,
+      );
+
+      setError(
+        err.message ||
+          'Erro ao carregar marcações.',
+      );
+
+    } finally {
+      setLoadingAppointments(
+        false,
+      );
+    }
+  }
+
+
+  useEffect(() => {
+    if (!session) {
+      setAppointments(
+        [],
+      );
+
+      return;
+    }
+
+    loadAppointments(
+      session,
+    );
+
+  }, [session]);
+
+
+  /* =======================================================
+     LOGIN
+  ======================================================= */
+
+  async function handleLogin(
+    event,
+  ) {
+    event.preventDefault();
+
+    setLoginLoading(
+      true,
+    );
+
+    setError('');
+
+
+    try {
+      const nextSession =
+        await signInAdmin(
+          email,
+          password,
+        );
+
+      setSession(
+        nextSession,
+      );
+
+      setPassword('');
+
+    } catch (err) {
+      console.error(
+        err,
+      );
+
+      setError(
+        err.message ||
+          'Não foi possível iniciar sessão.',
+      );
+
+    } finally {
+      setLoginLoading(
+        false,
+      );
+    }
+  }
+
+
+  /* =======================================================
+     LOGOUT
+  ======================================================= */
+
+  async function handleLogout() {
+    try {
+      await signOutAdmin();
+
+    } finally {
+      setSession(
+        null,
+      );
+
+      setAppointments(
+        [],
+      );
+    }
+  }
+
+
+  /* =======================================================
+     AGRUPAR POR DATA
+  ======================================================= */
+
+  const appointmentsByDate =
+    useMemo(
+      () => {
+        const grouped =
+          {};
+
+        appointments
+          .filter(
+            (
+              appointment,
+            ) =>
+              String(
+                appointment.status ||
+                  '',
+              )
+                .toLowerCase() !==
+              'cancelled',
+          )
+          .forEach(
+            (
+              appointment,
+            ) => {
+              const key =
+                appointment
+                  .appointment_date;
+
+              if (
+                !grouped[
+                  key
+                ]
+              ) {
+                grouped[
+                  key
+                ] = [];
+              }
+
+              grouped[
+                key
+              ].push(
+                appointment,
+              );
             },
           );
 
 
-        const data =
-          await response
-            .json()
-            .catch(
-              () => ({}),
-            );
-
-
-        if (
-          response.status ===
-            401 ||
-          response.status ===
-            403
-        ) {
-          await signOutAdmin()
-            .catch(
-              () => {},
-            );
-
-          setSession(null);
-
-          throw new Error(
-            'A sessão expirou. Entra novamente.',
-          );
-        }
-
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              'Não foi possível carregar as marcações.',
-          );
-        }
-
-
-        setAppointments(
-          Array.isArray(
-            data.appointments,
+        Object
+          .values(
+            grouped,
           )
-            ? data.appointments
-            : [],
-        );
-
-        setLastUpdated(
-          new Date(),
-        );
-      } catch (err) {
-        console.error(err);
-
-        setError(
-          err.message ||
-            'Não foi possível carregar as marcações.',
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-
-  useEffect(() => {
-    if (
-      session?.access_token
-    ) {
-      loadAppointments(
-        session,
-      );
-    }
-  }, [
-    session?.access_token,
-  ]);
-
-
-  /* =====================================
-     FILTROS
-  ===================================== */
-
-  const filteredAppointments =
-    useMemo(() => {
-      const normalizedQuery =
-        query
-          .trim()
-          .toLowerCase();
-
-      return appointments.filter(
-        (
-          appointment,
-        ) => {
-          if (
-            view ===
-              'today' &&
-            appointment
-              .appointment_date !==
-              today
-          ) {
-            return false;
-          }
-
-
-          if (
-            !normalizedQuery
-          ) {
-            return true;
-          }
-
-
-          const searchable =
-            [
-              appointment.name,
-
-              appointment.phone,
-
-              appointment.email,
-
-              appointment.service,
-            ]
-              .filter(Boolean)
-              .join(' ')
-              .toLowerCase();
-
-
-          return searchable.includes(
-            normalizedQuery,
+          .forEach(
+            (
+              items,
+            ) => {
+              items.sort(
+                (
+                  a,
+                  b,
+                ) =>
+                  timeToMinutes(
+                    a
+                      .appointment_time,
+                  ) -
+                  timeToMinutes(
+                    b
+                      .appointment_time,
+                  ),
+              );
+            },
           );
-        },
-      );
-    }, [
-      appointments,
-      query,
-      today,
-      view,
-    ]);
 
 
-  const groupedAppointments =
-    useMemo(
-      () =>
-        groupByDate(
-          filteredAppointments,
-        ),
+        return grouped;
+      },
 
       [
-        filteredAppointments,
+        appointments,
       ],
     );
 
 
-  const groupDates =
-    Object.keys(
-      groupedAppointments,
-    ).sort();
+  /* =======================================================
+     NAVEGAÇÃO CALENDÁRIO
+  ======================================================= */
+
+  function goPrevious() {
+    if (
+      view ===
+      'month'
+    ) {
+      setCursor(
+        (
+          current,
+        ) =>
+          addMonths(
+            current,
+            -1,
+          ),
+      );
+
+      return;
+    }
 
 
-  const todayCount =
-    appointments.filter(
+    if (
+      view ===
+      'week'
+    ) {
+      setCursor(
+        (
+          current,
+        ) =>
+          addDays(
+            current,
+            -7,
+          ),
+      );
+
+      return;
+    }
+
+
+    setCursor(
       (
-        appointment,
+        current,
       ) =>
+        addDays(
+          current,
+          -1,
+        ),
+    );
+  }
+
+
+  function goNext() {
+    if (
+      view ===
+      'month'
+    ) {
+      setCursor(
+        (
+          current,
+        ) =>
+          addMonths(
+            current,
+            1,
+          ),
+      );
+
+      return;
+    }
+
+
+    if (
+      view ===
+      'week'
+    ) {
+      setCursor(
+        (
+          current,
+        ) =>
+          addDays(
+            current,
+            7,
+          ),
+      );
+
+      return;
+    }
+
+
+    setCursor(
+      (
+        current,
+      ) =>
+        addDays(
+          current,
+          1,
+        ),
+    );
+  }
+
+
+  const rangeLabel =
+    view ===
+    'month'
+      ? monthLabel(
+          cursor,
+        )
+
+      : view ===
+        'week'
+        ? weekLabel(
+            cursor,
+          )
+
+        : dayLabel(
+            cursor,
+          );
+
+
+  /* =======================================================
+     ABRIR MARCAÇÃO
+  ======================================================= */
+
+  function openAppointment(
+    appointment,
+  ) {
+    const service =
+      services.find(
+        (
+          item,
+        ) =>
+          item.name ===
+          appointment
+            .service,
+      );
+
+    setError('');
+
+    setSelectedAppointment(
+      appointment,
+    );
+
+    setEditForm({
+      name:
+        appointment.name ||
+        '',
+
+      phone:
+        appointment.phone ||
+        '',
+
+      email:
+        appointment.email ||
+        '',
+
+      serviceId:
+        service?.id ||
+        '',
+
+      date:
         appointment
-          .appointment_date ===
-          today &&
-        appointment.status !==
-          'cancelled',
-    ).length;
+          .appointment_date ||
+        '',
+
+      time:
+        shortTime(
+          appointment
+            .appointment_time,
+        ),
+    });
+  }
 
 
-  const activeCount =
-    appointments.filter(
+  /* =======================================================
+     FECHAR MARCAÇÃO
+  ======================================================= */
+
+  function closeAppointment() {
+    if (
+      savingAppointment
+    ) {
+      return;
+    }
+
+    setSelectedAppointment(
+      null,
+    );
+
+    setEditForm(
+      null,
+    );
+
+    setError('');
+  }
+
+
+  /* =======================================================
+     FORM EDIT
+  ======================================================= */
+
+  function changeEditForm(
+    field,
+    value,
+  ) {
+    setEditForm(
       (
-        appointment,
-      ) =>
-        appointment.status !==
-        'cancelled',
-    ).length;
+        current,
+      ) => ({
+        ...current,
+
+        [field]:
+          value,
+      }),
+    );
+  }
 
 
-  const logout =
-    async () => {
-      await signOutAdmin();
+  /* =======================================================
+     GUARDAR ALTERAÇÃO
+  ======================================================= */
 
-      setSession(null);
-    };
+  async function saveAppointmentChanges() {
+    if (
+      !selectedAppointment ||
+      !editForm ||
+      !session
+        ?.access_token
+    ) {
+      return;
+    }
 
 
-  /* =====================================
-     ESTADOS
-  ===================================== */
+    setSavingAppointment(
+      true,
+    );
+
+    setError('');
+
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/appointments',
+          {
+            method:
+              'PATCH',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+
+            body:
+              JSON.stringify({
+                id:
+                  selectedAppointment.id,
+
+                name:
+                  editForm.name,
+
+                phone:
+                  editForm.phone,
+
+                email:
+                  editForm.email,
+
+                serviceId:
+                  editForm.serviceId,
+
+                date:
+                  editForm.date,
+
+                time:
+                  editForm.time,
+              }),
+          },
+        );
+
+
+      const data =
+        await response
+          .json()
+          .catch(
+            () => null,
+          );
+
+
+      if (
+        !response.ok
+      ) {
+        throw new Error(
+          data?.message ||
+            'Não foi possível alterar a marcação.',
+        );
+      }
+
+
+      await loadAppointments();
+
+      setSelectedAppointment(
+        null,
+      );
+
+      setEditForm(
+        null,
+      );
+
+    } catch (err) {
+      console.error(
+        err,
+      );
+
+      setError(
+        err.message ||
+          'Erro ao alterar marcação.',
+      );
+
+    } finally {
+      setSavingAppointment(
+        false,
+      );
+    }
+  }
+
+
+  /* =======================================================
+     ELIMINAR
+  ======================================================= */
+
+  async function deleteAppointment() {
+    if (
+      !selectedAppointment ||
+      !session
+        ?.access_token
+    ) {
+      return;
+    }
+
+
+    const confirmed =
+      window.confirm(
+        `Eliminar a marcação de ${selectedAppointment.name}?\n\nEsta ação não pode ser anulada.`,
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    setSavingAppointment(
+      true,
+    );
+
+    setError('');
+
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/appointments',
+          {
+            method:
+              'DELETE',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+
+            body:
+              JSON.stringify({
+                id:
+                  selectedAppointment.id,
+              }),
+          },
+        );
+
+
+      const data =
+        await response
+          .json()
+          .catch(
+            () => null,
+          );
+
+
+      if (
+        !response.ok
+      ) {
+        throw new Error(
+          data?.message ||
+            'Não foi possível eliminar a marcação.',
+        );
+      }
+
+
+      await loadAppointments();
+
+      setSelectedAppointment(
+        null,
+      );
+
+      setEditForm(
+        null,
+      );
+
+    } catch (err) {
+      console.error(
+        err,
+      );
+
+      setError(
+        err.message ||
+          'Erro ao eliminar marcação.',
+      );
+
+    } finally {
+      setSavingAppointment(
+        false,
+      );
+    }
+  }
+
+
+  /* =======================================================
+     NÃO CONFIGURADO
+  ======================================================= */
 
   if (
     !isSupabaseConfigured
   ) {
     return (
-      <div className="appointments-state-page">
-
-        <div className="appointments-state-card">
-
-          <p className="appointments-kicker">
-            Configuração necessária
-          </p>
-
-          <h1>
-            Supabase não está
-            configurado.
-          </h1>
-
-          <p>
-            Confirma as variáveis
-            VITE_SUPABASE_URL e
-            VITE_SUPABASE_ANON_KEY.
-          </p>
-
-          <Link
-            className="btn btn-dark"
-            to="/"
-          >
-            Voltar ao site
-          </Link>
-
-        </div>
-
-      </div>
+      <main className="appointments-state-page">
+        <h1>
+          Supabase não configurado
+        </h1>
+      </main>
     );
   }
 
 
-  if (authLoading) {
+  /* =======================================================
+     LOADING LOGIN
+  ======================================================= */
+
+  if (
+    checkingSession
+  ) {
     return (
-      <div className="appointments-loading-page">
-        A abrir marcações...
-      </div>
+      <main className="appointments-state-page">
+        <div className="appointments-loader">
+          A carregar...
+        </div>
+      </main>
     );
   }
 
+
+  /* =======================================================
+     LOGIN
+  ======================================================= */
 
   if (!session) {
     return (
-      <AppointmentsLogin
-        onSuccess={
-          setSession
+      <Login
+        email={
+          email
+        }
+        setEmail={
+          setEmail
+        }
+        password={
+          password
+        }
+        setPassword={
+          setPassword
+        }
+        loading={
+          loginLoading
+        }
+        error={
+          error
+        }
+        onSubmit={
+          handleLogin
         }
       />
     );
   }
 
 
-  /* =====================================
-     UI
-  ===================================== */
+  /* =======================================================
+     PAGE
+  ======================================================= */
 
   return (
-    <div className="appointments-page">
+    <main className="appointments-page">
 
-      <header className="appointments-header">
+      <header className="appointments-topbar">
 
         <div>
+          <span>
+            ANGEL FORTES
+          </span>
 
-          <p>
-            Angel Fortes
-          </p>
-
-          <strong>
+          <h1>
             Marcações
-          </strong>
-
+          </h1>
         </div>
 
 
-        <div className="appointments-header-actions">
-
-          <Link to="/">
-            Ver site
-          </Link>
+        <div className="appointments-topbar-actions">
 
           <button
             type="button"
-            onClick={logout}
+            onClick={() =>
+              loadAppointments()
+            }
+            disabled={
+              loadingAppointments
+            }
+          >
+            {loadingAppointments
+              ? 'A atualizar...'
+              : 'Atualizar'}
+          </button>
+
+
+          <button
+            type="button"
+            onClick={
+              handleLogout
+            }
           >
             Sair
           </button>
@@ -784,398 +2081,477 @@ export default function AppointmentsPage() {
       </header>
 
 
-      <main className="appointments-wrap">
+      <section className="calendar-panel">
 
-        <section className="appointments-intro">
+        <div className="calendar-toolbar">
 
-          <div>
+          <div className="calendar-navigation">
 
-            <p className="appointments-kicker">
-              Área privada
-            </p>
+            <button
+              type="button"
+              onClick={
+                goPrevious
+              }
+              aria-label="Anterior"
+            >
+              ‹
+            </button>
 
-            <h1>
-              Próximas marcações
-            </h1>
 
-            <p className="appointments-subtitle">
-              Consulta rapidamente
-              quem tens marcado, a que
-              horas e qual o serviço.
-            </p>
+            <button
+              type="button"
+              onClick={
+                goNext
+              }
+              aria-label="Seguinte"
+            >
+              ›
+            </button>
+
+
+            <button
+              type="button"
+              className="calendar-today-button"
+              onClick={() =>
+                setCursor(
+                  cloneDate(
+                    new Date(),
+                  ),
+                )
+              }
+            >
+              Hoje
+            </button>
 
           </div>
 
 
-          <button
-            className="appointments-refresh"
-            type="button"
-            onClick={() =>
-              loadAppointments()
-            }
-            disabled={loading}
+          <h2>
+            {rangeLabel}
+          </h2>
+
+
+          <div className="calendar-view-buttons">
+
+            <button
+              type="button"
+              className={
+                view ===
+                'month'
+                  ? 'active'
+                  : ''
+              }
+              onClick={() =>
+                setView(
+                  'month',
+                )
+              }
+            >
+              Mês
+            </button>
+
+
+            <button
+              type="button"
+              className={
+                view ===
+                'week'
+                  ? 'active'
+                  : ''
+              }
+              onClick={() =>
+                setView(
+                  'week',
+                )
+              }
+            >
+              Semana
+            </button>
+
+
+            <button
+              type="button"
+              className={
+                view ===
+                'day'
+                  ? 'active'
+                  : ''
+              }
+              onClick={() =>
+                setView(
+                  'day',
+                )
+              }
+            >
+              Dia
+            </button>
+
+          </div>
+
+        </div>
+
+
+        {error &&
+          !selectedAppointment && (
+          <div
+            className="appointments-error dashboard-error"
+            role="alert"
           >
-            {loading
-              ? 'A atualizar...'
-              : 'Atualizar'}
-          </button>
-
-        </section>
-
-
-        <section
-          className="appointments-kpis"
-          aria-label="Resumo das marcações"
-        >
-
-          <div>
-
-            <span>
-              Hoje
-            </span>
-
-            <strong>
-              {todayCount}
-            </strong>
-
-          </div>
-
-
-          <div>
-
-            <span>
-              Próximas
-            </span>
-
-            <strong>
-              {activeCount}
-            </strong>
-
-          </div>
-
-
-          <div>
-
-            <span>
-              Atualizado
-            </span>
-
-            <strong className="appointments-updated-time">
-
-              {lastUpdated
-                ? new Intl.DateTimeFormat(
-                    'pt-PT',
-                    {
-                      hour:
-                        '2-digit',
-
-                      minute:
-                        '2-digit',
-                    },
-                  ).format(
-                    lastUpdated,
-                  )
-                : '—'}
-
-            </strong>
-
-          </div>
-
-        </section>
-
-
-        <section className="appointments-toolbar">
-
-          <div className="appointments-tabs">
-
-            <button
-              type="button"
-              className={
-                view ===
-                'upcoming'
-                  ? 'active'
-                  : ''
-              }
-              onClick={() =>
-                setView(
-                  'upcoming',
-                )
-              }
-            >
-              Próximas
-            </button>
-
-
-            <button
-              type="button"
-              className={
-                view ===
-                'today'
-                  ? 'active'
-                  : ''
-              }
-              onClick={() =>
-                setView(
-                  'today',
-                )
-              }
-            >
-              Hoje
-            </button>
-
-          </div>
-
-
-          <label className="appointments-search">
-
-            <span>
-              Pesquisar
-            </span>
-
-            <input
-              type="search"
-              placeholder="Nome, telefone ou serviço"
-              value={query}
-              onChange={(event) =>
-                setQuery(
-                  event.target.value,
-                )
-              }
-            />
-
-          </label>
-
-        </section>
-
-
-        {error && (
-          <div className="appointments-alert">
             {error}
           </div>
         )}
 
 
-        {loading &&
-        appointments.length ===
-          0 ? (
-
-          <div className="appointments-empty">
-            A carregar marcações...
-          </div>
-
-        ) : groupDates.length ===
-          0 ? (
-
-          <div className="appointments-empty">
-
-            {view === 'today'
-              ? 'Não tens marcações para hoje.'
-              : 'Não existem marcações futuras para mostrar.'}
-
-          </div>
-
-        ) : (
-
-          <div className="appointments-days">
-
-            {groupDates.map(
-              (date) => (
-
-                <section
-                  className="appointments-day"
-                  key={date}
-                >
-
-                  <div className="appointments-day-heading">
-
-                    <div>
-
-                      <span>
-
-                        {date ===
-                        today
-                          ? 'Hoje'
-                          : formatShortDate(
-                              date,
-                            )}
-
-                      </span>
-
-
-                      <h2>
-                        {formatDate(
-                          date,
-                        )}
-                      </h2>
-
-                    </div>
-
-
-                    <strong>
-
-                      {
-                        groupedAppointments[
-                          date
-                        ].length
-                      }{' '}
-
-                      {groupedAppointments[
-                        date
-                      ].length ===
-                      1
-                        ? 'marcação'
-                        : 'marcações'}
-
-                    </strong>
-
-                  </div>
-
-
-                  <div className="appointments-list">
-
-                    {groupedAppointments[
-                      date
-                    ].map(
-                      (
-                        appointment,
-                      ) => (
-
-                        <article
-                          className={
-                            `appointment-card status-${
-                              appointment.status ||
-                              'confirmed'
-                            }`
-                          }
-                          key={
-                            appointment.id
-                          }
-                        >
-
-                          <div className="appointment-time">
-
-                            <strong>
-                              {formatTime(
-                                appointment
-                                  .appointment_time,
-                              )}
-                            </strong>
-
-
-                            {appointment.duration ? (
-                              <span>
-                                {
-                                  appointment.duration
-                                }{' '}
-                                min
-                              </span>
-                            ) : null}
-
-                          </div>
-
-
-                          <div className="appointment-main">
-
-                            <div className="appointment-name-row">
-
-                              <h3>
-
-                                {appointment.name ||
-                                  'Cliente sem nome'}
-
-                              </h3>
-
-
-                              <span
-                                className={
-                                  `appointment-status ${
-                                    appointment.status ||
-                                    'confirmed'
-                                  }`
-                                }
-                              >
-
-                                {STATUS_LABELS[
-                                  appointment.status
-                                ] ||
-                                  appointment.status ||
-                                  'Confirmada'}
-
-                              </span>
-
-                            </div>
-
-
-                            <p className="appointment-service">
-
-                              {appointment.service ||
-                                'Serviço'}
-
-                              {appointment.price !==
-                                null &&
-                              appointment.price !==
-                                undefined
-                                ? ` · ${formatPrice(
-                                    appointment.price,
-                                  )}`
-                                : ''}
-
-                            </p>
-
-
-                            <div className="appointment-contacts">
-
-                              {appointment.phone ? (
-
-                                <a
-                                  href={
-                                    `tel:${appointment.phone}`
-                                  }
-                                >
-                                  {
-                                    appointment.phone
-                                  }
-                                </a>
-
-                              ) : null}
-
-
-                              {appointment.email ? (
-
-                                <a
-                                  href={
-                                    `mailto:${appointment.email}`
-                                  }
-                                >
-                                  {
-                                    appointment.email
-                                  }
-                                </a>
-
-                              ) : null}
-
-                            </div>
-
-                          </div>
-
-                        </article>
-
-                      ),
-                    )}
-
-                  </div>
-
-                </section>
-
-              ),
-            )}
-
-          </div>
-
+        {view ===
+          'month' && (
+          <MonthView
+            cursor={
+              cursor
+            }
+            appointmentsByDate={
+              appointmentsByDate
+            }
+            onSelect={
+              openAppointment
+            }
+          />
         )}
 
-      </main>
 
-    </div>
+        {view ===
+          'week' && (
+          <WeekView
+            cursor={
+              cursor
+            }
+            appointmentsByDate={
+              appointmentsByDate
+            }
+            onSelect={
+              openAppointment
+            }
+          />
+        )}
+
+
+        {view ===
+          'day' && (
+          <DayView
+            cursor={
+              cursor
+            }
+            appointmentsByDate={
+              appointmentsByDate
+            }
+            onSelect={
+              openAppointment
+            }
+          />
+        )}
+
+      </section>
+
+
+      {/* =====================================================
+          EDITAR MARCAÇÃO
+      ===================================================== */}
+
+      {selectedAppointment &&
+        editForm && (
+        <div
+          className="appointment-details-backdrop"
+          onMouseDown={
+            (
+              event,
+            ) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                closeAppointment();
+              }
+            }
+          }
+        >
+          <section className="appointment-details appointment-editor">
+
+            <button
+              type="button"
+              className="appointment-details-close"
+              onClick={
+                closeAppointment
+              }
+              disabled={
+                savingAppointment
+              }
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+
+
+            <span className="appointment-details-eyebrow">
+              Gerir marcação
+            </span>
+
+
+            <h3>
+              {
+                selectedAppointment.name
+              }
+            </h3>
+
+
+            <div className="appointment-current-summary">
+
+              <span>
+                {
+                  selectedAppointment
+                    .appointment_date
+                }
+              </span>
+
+              <strong>
+                {shortTime(
+                  selectedAppointment
+                    .appointment_time,
+                )}
+              </strong>
+
+              <span>
+                {
+                  selectedAppointment
+                    .service
+                }
+              </span>
+
+            </div>
+
+
+            <div className="appointment-edit-grid">
+
+              <label>
+                Nome
+
+                <input
+                  value={
+                    editForm.name
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'name',
+                        event.target
+                          .value,
+                      )
+                  }
+                />
+              </label>
+
+
+              <label>
+                Telemóvel
+
+                <input
+                  type="tel"
+                  value={
+                    editForm.phone
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'phone',
+                        event.target
+                          .value,
+                      )
+                  }
+                />
+              </label>
+
+
+              <label className="appointment-edit-wide">
+                Email
+
+                <input
+                  type="email"
+                  value={
+                    editForm.email
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'email',
+                        event.target
+                          .value,
+                      )
+                  }
+                />
+              </label>
+
+
+              <label className="appointment-edit-wide">
+                Serviço
+
+                <select
+                  value={
+                    editForm.serviceId
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'serviceId',
+                        event.target
+                          .value,
+                      )
+                  }
+                >
+
+                  {!editForm
+                    .serviceId && (
+                    <option value="">
+                      {
+                        selectedAppointment
+                          .service
+                      }
+                    </option>
+                  )}
+
+
+                  {services.map(
+                    (
+                      service,
+                    ) => (
+                      <option
+                        key={
+                          service.id
+                        }
+                        value={
+                          service.id
+                        }
+                      >
+                        {
+                          service.name
+                        }
+                        {' — '}
+                        {
+                          service.duration
+                        }
+                        {' min'}
+                      </option>
+                    ),
+                  )}
+
+                </select>
+              </label>
+
+
+              <label>
+                Data
+
+                <input
+                  type="date"
+                  value={
+                    editForm.date
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'date',
+                        event.target
+                          .value,
+                      )
+                  }
+                />
+              </label>
+
+
+              <label>
+                Hora
+
+                <input
+                  type="time"
+                  step="600"
+                  value={
+                    editForm.time
+                  }
+                  onChange={
+                    (
+                      event,
+                    ) =>
+                      changeEditForm(
+                        'time',
+                        event.target
+                          .value,
+                      )
+                  }
+                />
+              </label>
+
+            </div>
+
+
+            {error && (
+              <div
+                className="appointments-error"
+                role="alert"
+              >
+                {error}
+              </div>
+            )}
+
+
+            <div className="appointment-editor-note">
+              Alterar ou eliminar aqui não envia automaticamente um novo email ao cliente.
+            </div>
+
+
+            <div className="appointment-editor-actions">
+
+              <button
+                type="button"
+                className="appointment-save-button"
+                disabled={
+                  savingAppointment
+                }
+                onClick={
+                  saveAppointmentChanges
+                }
+              >
+                {savingAppointment
+                  ? 'A guardar...'
+                  : 'Guardar alterações'}
+              </button>
+
+
+              <button
+                type="button"
+                className="appointment-delete-button"
+                disabled={
+                  savingAppointment
+                }
+                onClick={
+                  deleteAppointment
+                }
+              >
+                Eliminar marcação
+              </button>
+
+            </div>
+
+          </section>
+        </div>
+      )}
+
+    </main>
   );
 }

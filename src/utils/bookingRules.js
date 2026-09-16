@@ -78,7 +78,10 @@ export function minutesToTime(totalMinutes) {
    GERAR SLOTS
 ========================================================= */
 
-export function generateBookingSlots(duration) {
+export function generateBookingSlots(
+  duration,
+  dateString = '',
+) {
   const numericDuration =
     Number(duration);
 
@@ -91,7 +94,12 @@ export function generateBookingSlots(duration) {
 
   const slots = [];
 
-  OPENING_PERIODS.forEach(
+  const openingPeriods =
+    getOpeningPeriodsForDate(
+      dateString,
+    );
+
+  openingPeriods.forEach(
     ({
       start,
       end,
@@ -201,6 +209,73 @@ export function isSunday(dateString) {
       ),
     ).getUTCDay() === 0
   );
+}
+
+/* =========================================================
+   QUARTA-FEIRA
+========================================================= */
+
+export function isWednesday(dateString) {
+  if (
+    !isValidBookingDate(dateString)
+  ) {
+    return false;
+  }
+
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(
+      dateString,
+    );
+
+  if (!match) {
+    return false;
+  }
+
+  const year =
+    Number(match[1]);
+
+  const month =
+    Number(match[2]);
+
+  const day =
+    Number(match[3]);
+
+  return (
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        day,
+      ),
+    ).getUTCDay() === 3
+  );
+}
+
+
+/* =========================================================
+   HORÁRIO PARA UMA DATA ESPECÍFICA
+
+   Quarta-feira:
+   10:00 -> 13:00
+   tarde fechada
+========================================================= */
+
+export function getOpeningPeriodsForDate(
+  dateString,
+) {
+  if (
+    dateString &&
+    isWednesday(dateString)
+  ) {
+    return [
+      {
+        start: '10:00',
+        end: '13:00',
+      },
+    ];
+  }
+
+  return OPENING_PERIODS;
 }
 
 
@@ -467,6 +542,7 @@ export function hasMinimumNotice(
 export function isValidBookingSlot(
   time,
   duration,
+  dateString = '',
 ) {
   const start =
     timeToMinutes(time);
@@ -486,7 +562,12 @@ export function isValidBookingSlot(
     start +
     numericDuration;
 
-  return OPENING_PERIODS.some(
+  const openingPeriods =
+    getOpeningPeriodsForDate(
+      dateString,
+    );
+
+  return openingPeriods.some(
     (period) => {
       const periodStart =
         timeToMinutes(

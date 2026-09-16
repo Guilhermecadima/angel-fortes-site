@@ -178,6 +178,7 @@ export default async function handler(
     const allSlots =
       generateBookingSlots(
         selectedService.duration,
+        date,
       );
 
 

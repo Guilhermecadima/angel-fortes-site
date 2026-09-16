@@ -267,12 +267,13 @@ export default async function handler(
        HORÁRIO
     ===================================================== */
 
-    if (
-      !isValidBookingSlot(
-        cleanTime,
-        selectedService.duration,
-      )
-    ) {
+      if (
+        !isValidBookingSlot(
+          cleanTime,
+          selectedService.duration,
+          cleanDate,
+        )
+      ) {
       return res.status(400).json({
         message:
           'Horário inválido.',
