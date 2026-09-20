@@ -24,7 +24,60 @@ import '../styles/appointments-admin.css';
 
 const HOUR_START = 9;
 const HOUR_END = 19;
-const HOUR_HEIGHT = 72;
+
+const DESKTOP_HOUR_HEIGHT = 72;
+
+
+/* =========================================================
+   RESPONSIVE CALENDAR SIZE
+========================================================= */
+
+function getHourHeight() {
+  if (
+    typeof window ===
+    'undefined'
+  ) {
+    return DESKTOP_HOUR_HEIGHT;
+  }
+
+  if (
+    window.innerWidth >
+    760
+  ) {
+    return DESKTOP_HOUR_HEIGHT;
+  }
+
+  /*
+   * No telemóvel calculamos a altura
+   * das horas com base no espaço real
+   * disponível no ecrã.
+   *
+   * Assim tentamos mostrar a grelha
+   * inteira sem scroll vertical enorme.
+   */
+
+  const reservedSpace = 235;
+
+  const available =
+    window.innerHeight -
+    reservedSpace;
+
+  const hours =
+    HOUR_END -
+    HOUR_START;
+
+  const calculated =
+    available /
+    hours;
+
+  return Math.max(
+    34,
+    Math.min(
+      48,
+      calculated,
+    ),
+  );
+}
 
 
 /* =========================================================
@@ -324,6 +377,7 @@ function Login({
           onSubmit
         }
       >
+
         <div className="appointments-login-brand">
           ANGEL FORTES
         </div>
@@ -395,6 +449,7 @@ function Login({
             ? 'A entrar...'
             : 'Entrar'}
         </button>
+
       </form>
 
     </main>
@@ -403,12 +458,13 @@ function Login({
 
 
 /* =========================================================
-   MARCAÇÃO NO CALENDÁRIO
+   APPOINTMENT EVENT
 ========================================================= */
 
 function AppointmentEvent({
   appointment,
   onClick,
+  hourHeight,
 }) {
   const startMinutes =
     timeToMinutes(
@@ -419,20 +475,18 @@ function AppointmentEvent({
   const calendarStart =
     HOUR_START * 60;
 
-  const rawTop =
-    (
-      (
-        startMinutes -
-        calendarStart
-      ) /
-      60
-    ) *
-    HOUR_HEIGHT;
-
   const top =
     Math.max(
       0,
-      rawTop,
+
+      (
+        (
+          startMinutes -
+          calendarStart
+        ) /
+        60
+      ) *
+        hourHeight,
     );
 
   const duration =
@@ -442,14 +496,15 @@ function AppointmentEvent({
 
   const height =
     Math.max(
-      30,
+      18,
 
       (
         duration /
         60
       ) *
-        HOUR_HEIGHT,
+        hourHeight,
     );
+
 
   return (
     <button
@@ -489,29 +544,33 @@ function AppointmentEvent({
           appointment.service
         }
       </small>
+
     </button>
   );
 }
 
 
 /* =========================================================
-   QUARTA À TARDE
+   WEDNESDAY CLOSED
 ========================================================= */
 
-function WednesdayClosedBlock() {
+function WednesdayClosedBlock({
+  hourHeight,
+}) {
   const top =
     (
       13 -
       HOUR_START
     ) *
-    HOUR_HEIGHT;
+    hourHeight;
 
   const height =
     (
       HOUR_END -
       13
     ) *
-    HOUR_HEIGHT;
+    hourHeight;
+
 
   return (
     <div
@@ -525,7 +584,7 @@ function WednesdayClosedBlock() {
       }}
     >
       <span>
-        Tarde fechada
+        Fechado
       </span>
     </div>
   );
@@ -533,13 +592,14 @@ function WednesdayClosedBlock() {
 
 
 /* =========================================================
-   SEMANA
+   WEEK
 ========================================================= */
 
 function WeekView({
   cursor,
   appointmentsByDate,
   onSelect,
+  hourHeight,
 }) {
   const start =
     startOfWeek(
@@ -589,7 +649,7 @@ function WeekView({
       HOUR_END -
       HOUR_START
     ) *
-    HOUR_HEIGHT;
+    hourHeight;
 
 
   return (
@@ -651,6 +711,7 @@ function WeekView({
                 `${bodyHeight}px`,
             }}
           >
+
             {hours.map(
               (hour) => (
                 <div
@@ -664,7 +725,7 @@ function WeekView({
                         hour -
                         HOUR_START
                       ) *
-                      HOUR_HEIGHT,
+                      hourHeight,
                   }}
                 >
                   {String(
@@ -676,6 +737,7 @@ function WeekView({
                 </div>
               ),
             )}
+
           </div>
 
 
@@ -691,6 +753,7 @@ function WeekView({
                   key
                 ] || [];
 
+
               return (
                 <div
                   key={key}
@@ -703,13 +766,20 @@ function WeekView({
                   style={{
                     height:
                       `${bodyHeight}px`,
+
+                    '--calendar-hour-height':
+                      `${hourHeight}px`,
                   }}
                 >
 
                   {isWednesday(
                     day,
                   ) && (
-                    <WednesdayClosedBlock />
+                    <WednesdayClosedBlock
+                      hourHeight={
+                        hourHeight
+                      }
+                    />
                   )}
 
 
@@ -726,6 +796,9 @@ function WeekView({
                         }
                         onClick={
                           onSelect
+                        }
+                        hourHeight={
+                          hourHeight
                         }
                       />
                     ),
@@ -746,7 +819,7 @@ function WeekView({
 
 
 /* =========================================================
-   MÊS
+   MONTH
 ========================================================= */
 
 function MonthView({
@@ -801,13 +874,13 @@ function MonthView({
         <div className="month-weekdays">
 
           {[
-            'seg.',
-            'ter.',
-            'qua.',
-            'qui.',
-            'sex.',
-            'sáb.',
-            'dom.',
+            'seg',
+            'ter',
+            'qua',
+            'qui',
+            'sex',
+            'sáb',
+            'dom',
           ].map(
             (day) => (
               <div
@@ -843,6 +916,7 @@ function MonthView({
                 cursor
                   .getMonth();
 
+
               return (
                 <div
                   key={key}
@@ -867,12 +941,11 @@ function MonthView({
                       }
                     </span>
 
-
                     {isWednesday(
                       day,
                     ) && (
                       <small className="month-closed-note">
-                        tarde fechada
+                        tarde
                       </small>
                     )}
 
@@ -884,7 +957,7 @@ function MonthView({
                     {events
                       .slice(
                         0,
-                        5,
+                        4,
                       )
                       .map(
                         (
@@ -919,14 +992,13 @@ function MonthView({
 
 
                     {events.length >
-                      5 && (
+                      4 && (
                       <small className="month-more">
                         +
                         {
                           events.length -
-                          5
-                        }{' '}
-                        marcações
+                          4
+                        }
                       </small>
                     )}
 
@@ -947,13 +1019,14 @@ function MonthView({
 
 
 /* =========================================================
-   DIA
+   DAY
 ========================================================= */
 
 function DayView({
   cursor,
   appointmentsByDate,
   onSelect,
+  hourHeight,
 }) {
   const key =
     dateKey(
@@ -987,7 +1060,7 @@ function DayView({
       HOUR_END -
       HOUR_START
     ) *
-    HOUR_HEIGHT;
+    hourHeight;
 
 
   return (
@@ -1025,7 +1098,7 @@ function DayView({
                       hour -
                       HOUR_START
                     ) *
-                    HOUR_HEIGHT,
+                    hourHeight,
                 }}
               >
                 {String(
@@ -1046,13 +1119,20 @@ function DayView({
           style={{
             height:
               `${bodyHeight}px`,
+
+            '--calendar-hour-height':
+              `${hourHeight}px`,
           }}
         >
 
           {isWednesday(
             cursor,
           ) && (
-            <WednesdayClosedBlock />
+            <WednesdayClosedBlock
+              hourHeight={
+                hourHeight
+              }
+            />
           )}
 
 
@@ -1070,6 +1150,9 @@ function DayView({
                 onClick={
                   onSelect
                 }
+                hourHeight={
+                  hourHeight
+                }
               />
             ),
           )}
@@ -1084,12 +1167,10 @@ function DayView({
 
 
 /* =========================================================
-   PAGE
+   MAIN PAGE
 ========================================================= */
 
 export default function AppointmentsPage() {
-
-  /* SESSION */
 
   const [
     session,
@@ -1102,9 +1183,6 @@ export default function AppointmentsPage() {
     setCheckingSession,
   ] =
     useState(true);
-
-
-  /* LOGIN */
 
   const [
     loginLoading,
@@ -1124,9 +1202,6 @@ export default function AppointmentsPage() {
   ] =
     useState('');
 
-
-  /* DATA */
-
   const [
     appointments,
     setAppointments,
@@ -1144,9 +1219,6 @@ export default function AppointmentsPage() {
     setError,
   ] =
     useState('');
-
-
-  /* CALENDAR */
 
   const [
     view,
@@ -1166,9 +1238,6 @@ export default function AppointmentsPage() {
       ),
     );
 
-
-  /* EDITOR */
-
   const [
     selectedAppointment,
     setSelectedAppointment,
@@ -1187,6 +1256,52 @@ export default function AppointmentsPage() {
   ] =
     useState(false);
 
+  const [
+    hourHeight,
+    setHourHeight,
+  ] =
+    useState(
+      getHourHeight,
+    );
+
+
+  /* =======================================================
+     RESPONSIVE HEIGHT
+  ======================================================= */
+
+  useEffect(() => {
+    function resizeCalendar() {
+      setHourHeight(
+        getHourHeight(),
+      );
+    }
+
+    resizeCalendar();
+
+    window.addEventListener(
+      'resize',
+      resizeCalendar,
+    );
+
+    window.addEventListener(
+      'orientationchange',
+      resizeCalendar,
+    );
+
+
+    return () => {
+      window.removeEventListener(
+        'resize',
+        resizeCalendar,
+      );
+
+      window.removeEventListener(
+        'orientationchange',
+        resizeCalendar,
+      );
+    };
+  }, []);
+
 
   /* =======================================================
      SESSION
@@ -1195,6 +1310,7 @@ export default function AppointmentsPage() {
   useEffect(() => {
     let active =
       true;
+
 
     async function loadSession() {
       try {
@@ -1448,7 +1564,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     AGRUPAR POR DATA
+     GROUP APPOINTMENTS
   ======================================================= */
 
   const appointmentsByDate =
@@ -1532,7 +1648,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     NAVEGAÇÃO CALENDÁRIO
+     NAVIGATION
   ======================================================= */
 
   function goPrevious() {
@@ -1652,7 +1768,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     ABRIR MARCAÇÃO
+     OPEN APPOINTMENT
   ======================================================= */
 
   function openAppointment(
@@ -1705,10 +1821,6 @@ export default function AppointmentsPage() {
   }
 
 
-  /* =======================================================
-     FECHAR MARCAÇÃO
-  ======================================================= */
-
   function closeAppointment() {
     if (
       savingAppointment
@@ -1728,10 +1840,6 @@ export default function AppointmentsPage() {
   }
 
 
-  /* =======================================================
-     FORM EDIT
-  ======================================================= */
-
   function changeEditForm(
     field,
     value,
@@ -1750,7 +1858,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     GUARDAR ALTERAÇÃO
+     SAVE
   ======================================================= */
 
   async function saveAppointmentChanges() {
@@ -1861,7 +1969,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     ELIMINAR
+     DELETE
   ======================================================= */
 
   async function deleteAppointment() {
@@ -1964,7 +2072,7 @@ export default function AppointmentsPage() {
 
 
   /* =======================================================
-     NÃO CONFIGURADO
+     STATES
   ======================================================= */
 
   if (
@@ -1980,26 +2088,16 @@ export default function AppointmentsPage() {
   }
 
 
-  /* =======================================================
-     LOADING LOGIN
-  ======================================================= */
-
   if (
     checkingSession
   ) {
     return (
       <main className="appointments-state-page">
-        <div className="appointments-loader">
-          A carregar...
-        </div>
+        A carregar...
       </main>
     );
   }
 
-
-  /* =======================================================
-     LOGIN
-  ======================================================= */
 
   if (!session) {
     return (
@@ -2039,7 +2137,8 @@ export default function AppointmentsPage() {
 
       <header className="appointments-topbar">
 
-        <div>
+        <div className="appointments-brand">
+
           <span>
             ANGEL FORTES
           </span>
@@ -2047,6 +2146,7 @@ export default function AppointmentsPage() {
           <h1>
             Marcações
           </h1>
+
         </div>
 
 
@@ -2062,7 +2162,7 @@ export default function AppointmentsPage() {
             }
           >
             {loadingAppointments
-              ? 'A atualizar...'
+              ? 'A atualizar'
               : 'Atualizar'}
           </button>
 
@@ -2085,6 +2185,11 @@ export default function AppointmentsPage() {
 
         <div className="calendar-toolbar">
 
+          <h2>
+            {rangeLabel}
+          </h2>
+
+
           <div className="calendar-navigation">
 
             <button
@@ -2095,17 +2200,6 @@ export default function AppointmentsPage() {
               aria-label="Anterior"
             >
               ‹
-            </button>
-
-
-            <button
-              type="button"
-              onClick={
-                goNext
-              }
-              aria-label="Seguinte"
-            >
-              ›
             </button>
 
 
@@ -2123,12 +2217,18 @@ export default function AppointmentsPage() {
               Hoje
             </button>
 
+
+            <button
+              type="button"
+              onClick={
+                goNext
+              }
+              aria-label="Seguinte"
+            >
+              ›
+            </button>
+
           </div>
-
-
-          <h2>
-            {rangeLabel}
-          </h2>
 
 
           <div className="calendar-view-buttons">
@@ -2230,6 +2330,9 @@ export default function AppointmentsPage() {
             onSelect={
               openAppointment
             }
+            hourHeight={
+              hourHeight
+            }
           />
         )}
 
@@ -2246,6 +2349,9 @@ export default function AppointmentsPage() {
             onSelect={
               openAppointment
             }
+            hourHeight={
+              hourHeight
+            }
           />
         )}
 
@@ -2253,7 +2359,7 @@ export default function AppointmentsPage() {
 
 
       {/* =====================================================
-          EDITAR MARCAÇÃO
+          EDIT MODAL
       ===================================================== */}
 
       {selectedAppointment &&
@@ -2273,6 +2379,7 @@ export default function AppointmentsPage() {
             }
           }
         >
+
           <section className="appointment-details appointment-editor">
 
             <button
@@ -2510,11 +2617,6 @@ export default function AppointmentsPage() {
             )}
 
 
-            <div className="appointment-editor-note">
-              Alterar ou eliminar aqui não envia automaticamente um novo email ao cliente.
-            </div>
-
-
             <div className="appointment-editor-actions">
 
               <button
@@ -2543,12 +2645,13 @@ export default function AppointmentsPage() {
                   deleteAppointment
                 }
               >
-                Eliminar marcação
+                Eliminar
               </button>
 
             </div>
 
           </section>
+
         </div>
       )}
 
