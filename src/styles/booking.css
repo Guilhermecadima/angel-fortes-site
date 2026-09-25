@@ -2712,3 +2712,31 @@ input[type="time"] {
 .booking-store-af {
   display: none !important;
 }
+
+/* FIX URGENTE — botão AGENDAR sempre visível */
+@media (max-width: 700px) {
+
+  .booking-modal,
+  .booking-modal-single {
+    height: 620px !important;
+    min-height: 620px !important;
+    max-height: calc(100dvh - 12px) !important;
+
+    overflow: hidden !important;
+  }
+
+  .booking-submit {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+
+    margin-top: 8px !important;
+
+    position: relative !important;
+    z-index: 5 !important;
+  }
+}
