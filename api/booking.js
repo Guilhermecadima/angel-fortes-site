@@ -126,6 +126,7 @@ export default async function handler(
 
   try {
     const {
+      location,
       name,
       phone,
       email,
@@ -138,6 +139,11 @@ export default async function handler(
     /* =====================================================
        LIMPAR INPUTS
     ===================================================== */
+
+    const cleanLocation =
+      String(
+        location || '',
+      ).trim();
 
     const cleanName =
       String(
@@ -177,6 +183,7 @@ export default async function handler(
     ===================================================== */
 
     if (
+      !cleanLocation ||
       !cleanName ||
       !cleanPhone ||
       !cleanEmail ||
@@ -187,6 +194,21 @@ export default async function handler(
       return res.status(400).json({
         message:
           'Dados incompletos.',
+      });
+    }
+
+
+    const validLocations = {
+      santa_marta:
+        'Santa Marta do Pinhal',
+      costa_caparica:
+        'Costa da Caparica',
+    };
+
+    if (!validLocations[cleanLocation]) {
+      return res.status(400).json({
+        message:
+          'Loja inválida.',
       });
     }
 
@@ -323,6 +345,10 @@ export default async function handler(
           'appointment_date',
           cleanDate,
         )
+        .eq(
+          'location',
+          cleanLocation,
+        )
         .neq(
           'status',
           'cancelled',
@@ -412,6 +438,9 @@ export default async function handler(
           'appointments',
         )
         .insert({
+          location:
+            cleanLocation,
+
           name:
             cleanName,
 
@@ -518,6 +547,11 @@ export default async function handler(
       const safeService =
         escapeHtml(
           selectedService.name,
+        );
+
+      const safeLocation =
+        escapeHtml(
+          validLocations[cleanLocation],
         );
 
       const safeDate =
@@ -662,6 +696,14 @@ export default async function handler(
                     <h3>
                       Marcação
                     </h3>
+
+                    <p>
+                      <strong>
+                        Loja:
+                      </strong>
+
+                      ${safeLocation}
+                    </p>
 
                     <p>
                       <strong>

@@ -95,6 +95,19 @@ if not exists public.appointments (
     on delete set null,
 
 
+  -- Loja
+
+  location text
+    not null
+    default 'santa_marta'
+    check (
+      location in (
+        'santa_marta',
+        'costa_caparica'
+      )
+    ),
+
+
   -- Snapshot do cliente
 
   name text,
@@ -164,6 +177,23 @@ if not exists public.appointments (
 -- =========================================================
 -- MIGRAÇÃO PARA TABELAS APPOINTMENTS JÁ EXISTENTES
 -- =========================================================
+
+alter table
+public.appointments
+
+add column
+if not exists location text
+default 'santa_marta';
+
+
+update public.appointments
+set location = 'santa_marta'
+where location is null;
+
+
+alter table public.appointments
+alter column location set not null;
+
 
 alter table
 public.appointments

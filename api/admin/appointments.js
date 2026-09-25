@@ -236,6 +236,7 @@ async function handleGet(res) {
       )
       .select(`
         id,
+        location,
         name,
         email,
         phone,
@@ -599,6 +600,10 @@ async function handlePatch(
       .eq(
         'appointment_date',
         cleanDate,
+      )
+      .eq(
+        'location',
+        existing.location || 'santa_marta',
       )
       .neq(
         'id',

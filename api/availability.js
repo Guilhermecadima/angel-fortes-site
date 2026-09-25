@@ -31,6 +31,12 @@ export default async function handler(
   }
 
   try {
+    const location =
+      typeof req.query.location ===
+      'string'
+        ? req.query.location
+        : '';
+
     const date =
       typeof req.query.date ===
       'string'
@@ -55,13 +61,27 @@ export default async function handler(
     ===================================================== */
 
     if (
+      !location ||
       !date ||
       !serviceId ||
       !preferredTime
     ) {
       return res.status(400).json({
         message:
-          'Data, serviço e hora pretendida são obrigatórios.',
+          'Loja, data, serviço e hora pretendida são obrigatórios.',
+      });
+    }
+
+
+    const validLocations = [
+      'santa_marta',
+      'costa_caparica',
+    ];
+
+    if (!validLocations.includes(location)) {
+      return res.status(400).json({
+        message:
+          'Loja inválida.',
       });
     }
 
@@ -160,6 +180,10 @@ export default async function handler(
         .eq(
           'appointment_date',
           date,
+        )
+        .eq(
+          'location',
+          location,
         )
         .neq(
           'status',

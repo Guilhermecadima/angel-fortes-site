@@ -28,6 +28,9 @@ export default function BookingModal({
   const [serviceId, setServiceId] =
     useState(null);
 
+  const [location, setLocation] =
+    useState('');
+
   const [date, setDate] =
     useState('');
 
@@ -99,6 +102,8 @@ export default function BookingModal({
       initialServiceId || null,
     );
 
+
+    setLocation('');
 
     setDate('');
 
@@ -181,6 +186,7 @@ export default function BookingModal({
 
     if (
       !open ||
+      !location ||
       !serviceId ||
       !date ||
       !preferredTime
@@ -213,6 +219,7 @@ export default function BookingModal({
 
           const params =
             new URLSearchParams({
+              location,
               date,
               serviceId:
                 String(serviceId),
@@ -315,6 +322,7 @@ export default function BookingModal({
 
   }, [
     open,
+    location,
     serviceId,
     date,
     preferredTime,
@@ -406,6 +414,7 @@ export default function BookingModal({
     async () => {
 
       if (
+        !location ||
         !date ||
         !serviceId ||
         !preferredTime
@@ -418,6 +427,7 @@ export default function BookingModal({
 
         const params =
           new URLSearchParams({
+            location,
             date,
 
             serviceId:
@@ -543,6 +553,8 @@ export default function BookingModal({
         id:
           Date.now(),
 
+        location,
+
         serviceId:
           selectedService.id,
 
@@ -597,6 +609,9 @@ export default function BookingModal({
 
               body:
                 JSON.stringify({
+
+                  location:
+                    booking.location,
 
                   name:
                     booking.name,
@@ -847,13 +862,7 @@ export default function BookingModal({
             className="booking-store-link"
           >
             <span className="booking-store-link-copy">
-              <small>
-                Produtos Angel Fortes
-              </small>
-
-              <strong>
-                Vê a nossa loja
-              </strong>
+              <strong>Veja a nossa loja</strong>
             </span>
 
             <span className="booking-store-link-arrow">
@@ -868,6 +877,39 @@ export default function BookingModal({
           className="booking-single-form"
           onSubmit={submit}
         >
+
+          {/* LOJA */}
+
+          <div className="booking-field booking-location-field">
+
+            <label htmlFor="booking-location">
+              Escolhe a loja
+            </label>
+
+            <select
+              id="booking-location"
+              value={location}
+              onChange={(event) => {
+                setLocation(event.target.value);
+                setTime('');
+                setSuggestedTimes([]);
+                setError('');
+              }}
+              required
+            >
+              <option value="">
+                Escolhe uma loja
+              </option>
+              <option value="santa_marta">
+                Santa Marta do Pinhal
+              </option>
+              <option value="costa_caparica">
+                Costa da Caparica
+              </option>
+            </select>
+
+          </div>
+
 
           {/* DATA + SERVIÇO */}
 
