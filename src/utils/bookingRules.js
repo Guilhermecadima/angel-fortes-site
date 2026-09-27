@@ -81,6 +81,7 @@ export function minutesToTime(totalMinutes) {
 export function generateBookingSlots(
   duration,
   dateString = '',
+  location = '',
 ) {
   const numericDuration =
     Number(duration);
@@ -97,6 +98,7 @@ export function generateBookingSlots(
   const openingPeriods =
     getOpeningPeriodsForDate(
       dateString,
+      location,
     );
 
   openingPeriods.forEach(
@@ -253,20 +255,56 @@ export function isWednesday(dateString) {
 
 
 /* =========================================================
-   HORÁRIO PARA UMA DATA ESPECÍFICA
+   HORÁRIO POR LOCALIZAÇÃO E DIA
 
-   Quarta-feira:
-   10:00 -> 13:00
-   tarde fechada
+   Santa Marta do Pinhal:
+   - Segunda, terça, quinta e sexta: 10:00 -> 13:00
+   - Quarta: fechado
+
+   Costa da Caparica:
+   - Segunda a sexta: 15:00 -> 18:00
+
+   Sábado e domingo: fechado
 ========================================================= */
+
+export function getDayOfWeek(dateString) {
+  if (!isValidBookingDate(dateString)) {
+    return null;
+  }
+
+  const [year, month, day] =
+    dateString.split('-').map(Number);
+
+  return new Date(
+    Date.UTC(year, month - 1, day),
+  ).getUTCDay();
+}
 
 export function getOpeningPeriodsForDate(
   dateString,
+  location = '',
 ) {
+  const dayOfWeek =
+    getDayOfWeek(dateString);
+
+  if (dayOfWeek === null) {
+    return [];
+  }
+
+  // Sábado e domingo
   if (
-    dateString &&
-    isWednesday(dateString)
+    dayOfWeek === 0 ||
+    dayOfWeek === 6
   ) {
+    return [];
+  }
+
+  if (location === 'santa_marta') {
+    // Santa Marta não trabalha à quarta.
+    if (dayOfWeek === 3) {
+      return [];
+    }
+
     return [
       {
         start: '10:00',
@@ -275,7 +313,18 @@ export function getOpeningPeriodsForDate(
     ];
   }
 
-  return OPENING_PERIODS;
+  if (location === 'costa_caparica') {
+    // Costa trabalha todas as tardes de segunda a sexta,
+    // incluindo quarta-feira.
+    return [
+      {
+        start: '15:00',
+        end: '18:00',
+      },
+    ];
+  }
+
+  return [];
 }
 
 
@@ -543,6 +592,7 @@ export function isValidBookingSlot(
   time,
   duration,
   dateString = '',
+  location = '',
 ) {
   const start =
     timeToMinutes(time);
@@ -565,6 +615,7 @@ export function isValidBookingSlot(
   const openingPeriods =
     getOpeningPeriodsForDate(
       dateString,
+      location,
     );
 
   return openingPeriods.some(

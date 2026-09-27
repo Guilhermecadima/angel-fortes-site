@@ -294,6 +294,7 @@ export default async function handler(
           cleanTime,
           selectedService.duration,
           cleanDate,
+          cleanLocation,
         )
       ) {
       return res.status(400).json({

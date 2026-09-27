@@ -222,13 +222,6 @@ function capitalize(value) {
 }
 
 
-function isWednesday(date) {
-  return (
-    date.getDay() === 3
-  );
-}
-
-
 /* =========================================================
    LABELS
 ========================================================= */
@@ -551,47 +544,6 @@ function AppointmentEvent({
 
 
 /* =========================================================
-   WEDNESDAY CLOSED
-========================================================= */
-
-function WednesdayClosedBlock({
-  hourHeight,
-}) {
-  const top =
-    (
-      13 -
-      HOUR_START
-    ) *
-    hourHeight;
-
-  const height =
-    (
-      HOUR_END -
-      13
-    ) *
-    hourHeight;
-
-
-  return (
-    <div
-      className="calendar-closed-block"
-      style={{
-        top:
-          `${top}px`,
-
-        height:
-          `${height}px`,
-      }}
-    >
-      <span>
-        Fechado
-      </span>
-    </div>
-  );
-}
-
-
-/* =========================================================
    WEEK
 ========================================================= */
 
@@ -772,17 +724,6 @@ function WeekView({
                   }}
                 >
 
-                  {isWednesday(
-                    day,
-                  ) && (
-                    <WednesdayClosedBlock
-                      hourHeight={
-                        hourHeight
-                      }
-                    />
-                  )}
-
-
                   {appointments.map(
                     (
                       appointment,
@@ -940,14 +881,6 @@ function MonthView({
                           .getDate()
                       }
                     </span>
-
-                    {isWednesday(
-                      day,
-                    ) && (
-                      <small className="month-closed-note">
-                        tarde
-                      </small>
-                    )}
 
                   </div>
 
@@ -1124,17 +1057,6 @@ function DayView({
               `${hourHeight}px`,
           }}
         >
-
-          {isWednesday(
-            cursor,
-          ) && (
-            <WednesdayClosedBlock
-              hourHeight={
-                hourHeight
-              }
-            />
-          )}
-
 
           {appointments.map(
             (

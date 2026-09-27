@@ -65,61 +65,6 @@ function normalizeTime(value) {
 }
 
 
-function isWednesday(dateString) {
-  if (
-    !isValidBookingDate(
-      dateString,
-    )
-  ) {
-    return false;
-  }
-
-  const [
-    year,
-    month,
-    day,
-  ] =
-    dateString
-      .split('-')
-      .map(Number);
-
-  return (
-    new Date(
-      Date.UTC(
-        year,
-        month - 1,
-        day,
-      ),
-    ).getUTCDay() === 3
-  );
-}
-
-
-function isWednesdayAfternoon(
-  dateString,
-  timeString,
-) {
-  if (
-    !isWednesday(dateString)
-  ) {
-    return false;
-  }
-
-  const minutes =
-    timeToMinutes(
-      timeString,
-    );
-
-  return (
-    Number.isFinite(
-      minutes,
-    ) &&
-    minutes >=
-      13 * 60
-  );
-}
-
-
 /* =========================================================
    AUTH
 ========================================================= */
@@ -456,25 +401,6 @@ async function handlePatch(
 
 
   /* =======================================================
-     QUARTA À TARDE
-  ======================================================= */
-
-  if (
-    isWednesdayAfternoon(
-      cleanDate,
-      cleanTime,
-    )
-  ) {
-    return res
-      .status(400)
-      .json({
-        message:
-          'À quarta-feira a barbearia só aceita marcações de manhã.',
-      });
-  }
-
-
-  /* =======================================================
      HORÁRIO DA BARBEARIA
   ======================================================= */
 
@@ -483,6 +409,7 @@ async function handlePatch(
       cleanTime,
       selectedService.duration,
       cleanDate,
+      existing.location || 'santa_marta',
     )
   ) {
     return res

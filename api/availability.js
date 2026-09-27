@@ -203,6 +203,7 @@ export default async function handler(
       generateBookingSlots(
         selectedService.duration,
         date,
+        location,
       );
 
 
