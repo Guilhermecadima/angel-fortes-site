@@ -137,9 +137,6 @@ export function generateBookingSlots(
 
 /* =========================================================
    VALIDAR DATA REAL
-
-   Corrige o bug em que algo como 2026-02-30
-   passava pela regex e chegava ao Supabase.
 ========================================================= */
 
 export function isValidBookingDate(dateString) {
@@ -213,6 +210,7 @@ export function isSunday(dateString) {
   );
 }
 
+
 /* =========================================================
    QUARTA-FEIRA
 ========================================================= */
@@ -257,16 +255,20 @@ export function isWednesday(dateString) {
 /* =========================================================
    HORÁRIO POR LOCALIZAÇÃO E DIA
 
-   Santa Marta do Pinhal:
+   HORÁRIO NORMAL:
+
+   Santa Marta:
    - Segunda, terça, quinta e sexta: 09:00 -> 13:00
    - Quarta: fechado
    - Sábado: 08:00 -> 13:00
 
-   Costa da Caparica:
+   Costa:
    - Segunda a sábado: 15:00 -> 18:00
-   - Inclui quarta-feira e sábado
 
-   Domingo: fechado
+   EXCEÇÃO TEMPORÁRIA:
+   - 28/09/2026 e 29/09/2026
+   - Santa Marta abre também à tarde
+   - Costa fica fechada nesses dois dias
 ========================================================= */
 
 export function getDayOfWeek(dateString) {
@@ -282,6 +284,7 @@ export function getDayOfWeek(dateString) {
   ).getUTCDay();
 }
 
+
 export function getOpeningPeriodsForDate(
   dateString,
   location = '',
@@ -293,18 +296,67 @@ export function getOpeningPeriodsForDate(
     return [];
   }
 
+
+  /* =======================================================
+     EXCEÇÃO APENAS HOJE E AMANHÃ
+  ======================================================= */
+
+  const temporarySantaMartaDates = [
+    '2026-09-28',
+    '2026-09-29',
+  ];
+
+  if (
+    temporarySantaMartaDates.includes(
+      dateString,
+    )
+  ) {
+    if (
+      location === 'santa_marta'
+    ) {
+      return [
+        {
+          start: '09:00',
+          end: '13:00',
+        },
+        {
+          start: '15:00',
+          end: '18:00',
+        },
+      ];
+    }
+
+    if (
+      location === 'costa_caparica'
+    ) {
+      return [];
+    }
+  }
+
+
+  /* =======================================================
+     HORÁRIO NORMAL
+  ======================================================= */
+
   // Domingo
   if (dayOfWeek === 0) {
     return [];
   }
 
-  if (location === 'santa_marta') {
-    // Santa Marta não trabalha à quarta.
+
+  /* -------------------------
+     SANTA MARTA
+  ------------------------- */
+
+  if (
+    location === 'santa_marta'
+  ) {
+    // Quarta fechado
     if (dayOfWeek === 3) {
       return [];
     }
 
-    // Sábado começa mais cedo.
+    // Sábado começa às 08:00
     if (dayOfWeek === 6) {
       return [
         {
@@ -314,7 +366,7 @@ export function getOpeningPeriodsForDate(
       ];
     }
 
-    // Segunda, terça, quinta e sexta.
+    // Segunda, terça, quinta e sexta
     return [
       {
         start: '09:00',
@@ -323,9 +375,14 @@ export function getOpeningPeriodsForDate(
     ];
   }
 
-  if (location === 'costa_caparica') {
-    // Costa trabalha à tarde de segunda a sábado,
-    // incluindo quarta-feira e sábado.
+
+  /* -------------------------
+     COSTA DA CAPARICA
+  ------------------------- */
+
+  if (
+    location === 'costa_caparica'
+  ) {
     return [
       {
         start: '15:00',
@@ -579,6 +636,28 @@ export function hasMinimumNotice(
   ) {
     return false;
   }
+
+
+  /* =======================================================
+     EXCEÇÃO PARA HOJE
+
+     Sem isto, a regra normal de 8h de antecedência
+     podia esconder os horários da tarde de hoje.
+  ======================================================= */
+
+  if (
+    dateString === '2026-09-28'
+  ) {
+    return (
+      bookingDate.getTime() >
+      now.getTime()
+    );
+  }
+
+
+  /* =======================================================
+     REGRA NORMAL
+  ======================================================= */
 
   const minimumMs =
     MIN_BOOKING_NOTICE_HOURS *
