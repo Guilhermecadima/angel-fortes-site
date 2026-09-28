@@ -258,13 +258,15 @@ export function isWednesday(dateString) {
    HORÁRIO POR LOCALIZAÇÃO E DIA
 
    Santa Marta do Pinhal:
-   - Segunda, terça, quinta e sexta: 10:00 -> 13:00
+   - Segunda, terça, quinta e sexta: 09:00 -> 13:00
    - Quarta: fechado
+   - Sábado: 08:00 -> 13:00
 
    Costa da Caparica:
-   - Segunda a sexta: 15:00 -> 18:00
+   - Segunda a sábado: 15:00 -> 18:00
+   - Inclui quarta-feira e sábado
 
-   Sábado e domingo: fechado
+   Domingo: fechado
 ========================================================= */
 
 export function getDayOfWeek(dateString) {
@@ -291,11 +293,8 @@ export function getOpeningPeriodsForDate(
     return [];
   }
 
-  // Sábado e domingo
-  if (
-    dayOfWeek === 0 ||
-    dayOfWeek === 6
-  ) {
+  // Domingo
+  if (dayOfWeek === 0) {
     return [];
   }
 
@@ -305,17 +304,28 @@ export function getOpeningPeriodsForDate(
       return [];
     }
 
+    // Sábado começa mais cedo.
+    if (dayOfWeek === 6) {
+      return [
+        {
+          start: '08:00',
+          end: '13:00',
+        },
+      ];
+    }
+
+    // Segunda, terça, quinta e sexta.
     return [
       {
-        start: '10:00',
+        start: '09:00',
         end: '13:00',
       },
     ];
   }
 
   if (location === 'costa_caparica') {
-    // Costa trabalha todas as tardes de segunda a sexta,
-    // incluindo quarta-feira.
+    // Costa trabalha à tarde de segunda a sábado,
+    // incluindo quarta-feira e sábado.
     return [
       {
         start: '15:00',
