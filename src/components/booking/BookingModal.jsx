@@ -857,19 +857,6 @@ export default function BookingModal({
             horários disponíveis próximos.
           </p>
 
-          <a
-            href="/loja"
-            className="booking-store-link"
-          >
-            <span className="booking-store-link-copy">
-              <strong>Veja a nossa loja</strong>
-            </span>
-
-            <span className="booking-store-link-arrow">
-              →
-            </span>
-          </a>
-
         </div>
 
 
