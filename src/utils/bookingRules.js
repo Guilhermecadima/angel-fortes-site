@@ -46,8 +46,11 @@ export function minutesToTime(totalMinutes) {
     return '';
   }
 
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  const hours =
+    Math.floor(totalMinutes / 60);
+
+  const minutes =
+    totalMinutes % 60;
 
   return (
     `${String(hours).padStart(2, '0')}:` +
@@ -57,36 +60,111 @@ export function minutesToTime(totalMinutes) {
 
 
 /* =========================================================
+   GERAR SLOTS
+========================================================= */
+
+export function generateBookingSlots(
+  duration,
+  dateString = '',
+  location = '',
+) {
+  const numericDuration =
+    Number(duration);
+
+  if (
+    !Number.isFinite(numericDuration) ||
+    numericDuration <= 0
+  ) {
+    return [];
+  }
+
+  const slots = [];
+
+  const openingPeriods =
+    getOpeningPeriodsForDate(
+      dateString,
+      location,
+    );
+
+  openingPeriods.forEach(
+    ({
+      start,
+      end,
+    }) => {
+      const startMinutes =
+        timeToMinutes(start);
+
+      const endMinutes =
+        timeToMinutes(end);
+
+      if (
+        !Number.isFinite(startMinutes) ||
+        !Number.isFinite(endMinutes)
+      ) {
+        return;
+      }
+
+      for (
+        let current = startMinutes;
+        current + numericDuration <= endMinutes;
+        current += SLOT_INTERVAL
+      ) {
+        slots.push(
+          minutesToTime(current),
+        );
+      }
+    },
+  );
+
+  return slots;
+}
+
+
+/* =========================================================
    VALIDAR DATA
 ========================================================= */
 
 export function isValidBookingDate(dateString) {
-  const value = String(dateString || '');
+  const value =
+    String(dateString || '');
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
     return false;
   }
 
-  const parsed = new Date(`${value}T00:00:00.000Z`);
+  const parsed =
+    new Date(
+      `${value}T00:00:00.000Z`,
+    );
 
-  if (Number.isNaN(parsed.getTime())) {
+  if (
+    Number.isNaN(
+      parsed.getTime(),
+    )
+  ) {
     return false;
   }
 
-  return parsed.toISOString().slice(0, 10) === value;
+  return (
+    parsed
+      .toISOString()
+      .slice(0, 10) === value
+  );
 }
 
 
 /* =========================================================
    DIA DA SEMANA
 
-   0 = Domingo
-   1 = Segunda
-   2 = Terça
-   3 = Quarta
-   4 = Quinta
-   5 = Sexta
-   6 = Sábado
+   0 domingo
+   1 segunda
+   2 terça
+   3 quarta
+   4 quinta
+   5 sexta
+   6 sábado
 ========================================================= */
 
 export function getDayOfWeek(dateString) {
@@ -98,7 +176,11 @@ export function getDayOfWeek(dateString) {
     dateString.split('-').map(Number);
 
   return new Date(
-    Date.UTC(year, month - 1, day),
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+    ),
   ).getUTCDay();
 }
 
@@ -125,109 +207,110 @@ export function isWednesday(dateString) {
    HORÁRIOS
 
    SEGUNDA
-   Santa Marta: 09:00 - 14:00
-   Costa:       14:00 - 19:00
+   Santa Marta 09:00 -> 13:00
+   Costa       15:00 -> 19:00
 
    TERÇA
-   Santa Marta: 09:00 - 14:00
-   Costa:       14:00 - 19:00
+   Santa Marta 09:00 -> 13:00
+   Costa       15:00 -> 19:00
 
    QUARTA
-   Santa Marta: FECHADO
-   Costa:       09:00 - 19:00
+   Santa Marta FECHADO
+   Costa       09:00 -> 13:00
+               15:00 -> 19:00
 
    QUINTA
-   Santa Marta: 09:00 - 14:00
-   Costa:       14:00 - 19:00
+   Santa Marta 09:00 -> 13:00
+   Costa       15:00 -> 19:00
 
    SEXTA
-   Santa Marta: 09:00 - 19:00
-   Costa:       FECHADO
+   Santa Marta 09:00 -> 13:00
+               15:00 -> 19:00
+   Costa       FECHADO
 
    SÁBADO
-   Santa Marta: 08:00 - 14:00
-   Costa:       14:00 - 19:00
+   Santa Marta 08:00 -> 13:00
+   Costa       15:00 -> 19:00
 
    DOMINGO
    FECHADO
+
+   IMPORTANTE:
+   Entre 13:00 e 15:00 não existem slots.
+   Um serviço também não pode começar antes
+   das 13h e terminar depois das 13h.
 ========================================================= */
 
 export function getOpeningPeriodsForDate(
   dateString,
   location = '',
 ) {
-  const dayOfWeek = getDayOfWeek(dateString);
+  const dayOfWeek =
+    getDayOfWeek(dateString);
 
   if (dayOfWeek === null) {
     return [];
   }
 
-  // Domingo
+
+  // DOMINGO
   if (dayOfWeek === 0) {
     return [];
   }
 
 
   /* =======================================================
-     SANTA MARTA DO PINHAL
+     SANTA MARTA
   ======================================================= */
 
   if (location === 'santa_marta') {
 
-    // Segunda
-    if (dayOfWeek === 1) {
+    // Segunda, terça e quinta
+    if (
+      dayOfWeek === 1 ||
+      dayOfWeek === 2 ||
+      dayOfWeek === 4
+    ) {
       return [
         {
           start: '09:00',
-          end: '14:00',
+          end: '13:00',
         },
       ];
     }
 
-    // Terça
-    if (dayOfWeek === 2) {
-      return [
-        {
-          start: '09:00',
-          end: '14:00',
-        },
-      ];
-    }
 
     // Quarta fechado
     if (dayOfWeek === 3) {
       return [];
     }
 
-    // Quinta
-    if (dayOfWeek === 4) {
-      return [
-        {
-          start: '09:00',
-          end: '14:00',
-        },
-      ];
-    }
 
-    // Sexta - dia inteiro
+    // Sexta - dia inteiro com almoço
     if (dayOfWeek === 5) {
       return [
         {
           start: '09:00',
+          end: '13:00',
+        },
+        {
+          start: '15:00',
           end: '19:00',
         },
       ];
     }
+
 
     // Sábado
     if (dayOfWeek === 6) {
       return [
         {
           start: '08:00',
-          end: '14:00',
+          end: '13:00',
         },
       ];
     }
+
 
     return [];
   }
@@ -239,115 +322,58 @@ export function getOpeningPeriodsForDate(
 
   if (location === 'costa_caparica') {
 
-    // Segunda
-    if (dayOfWeek === 1) {
+    // Segunda, terça e quinta
+    if (
+      dayOfWeek === 1 ||
+      dayOfWeek === 2 ||
+      dayOfWeek === 4
+    ) {
       return [
         {
-          start: '14:00',
+          start: '15:00',
           end: '19:00',
         },
       ];
     }
 
-    // Terça
-    if (dayOfWeek === 2) {
-      return [
-        {
-          start: '14:00',
-          end: '19:00',
-        },
-      ];
-    }
 
-    // Quarta - dia inteiro
+    // Quarta - dia inteiro com almoço
     if (dayOfWeek === 3) {
       return [
         {
           start: '09:00',
+          end: '13:00',
+        },
+        {
+          start: '15:00',
           end: '19:00',
         },
       ];
     }
 
-    // Quinta
-    if (dayOfWeek === 4) {
-      return [
-        {
-          start: '14:00',
-          end: '19:00',
-        },
-      ];
-    }
 
     // Sexta fechado
     if (dayOfWeek === 5) {
       return [];
     }
 
+
     // Sábado
     if (dayOfWeek === 6) {
       return [
         {
-          start: '14:00',
+          start: '15:00',
           end: '19:00',
         },
       ];
     }
 
+
     return [];
   }
+
 
   return [];
-}
-
-
-/* =========================================================
-   GERAR SLOTS
-========================================================= */
-
-export function generateBookingSlots(
-  duration,
-  dateString = '',
-  location = '',
-) {
-  const numericDuration = Number(duration);
-
-  if (
-    !Number.isFinite(numericDuration) ||
-    numericDuration <= 0
-  ) {
-    return [];
-  }
-
-  const slots = [];
-
-  const openingPeriods =
-    getOpeningPeriodsForDate(
-      dateString,
-      location,
-    );
-
-  openingPeriods.forEach(({ start, end }) => {
-    const startMinutes = timeToMinutes(start);
-    const endMinutes = timeToMinutes(end);
-
-    if (
-      !Number.isFinite(startMinutes) ||
-      !Number.isFinite(endMinutes)
-    ) {
-      return;
-    }
-
-    for (
-      let current = startMinutes;
-      current + numericDuration <= endMinutes;
-      current += SLOT_INTERVAL
-    ) {
-      slots.push(minutesToTime(current));
-    }
-  });
-
-  return slots;
 }
 
 
@@ -362,28 +388,39 @@ export function getTodayInBookingTimeZone(
     new Intl.DateTimeFormat(
       'en-GB',
       {
-        timeZone: BOOKING_TIME_ZONE,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
+        timeZone:
+          BOOKING_TIME_ZONE,
+
+        year:
+          'numeric',
+
+        month:
+          '2-digit',
+
+        day:
+          '2-digit',
       },
     );
 
-  const parts = formatter.formatToParts(now);
+  const parts =
+    formatter.formatToParts(now);
 
   const year =
     parts.find(
-      (part) => part.type === 'year',
+      (part) =>
+        part.type === 'year',
     )?.value;
 
   const month =
     parts.find(
-      (part) => part.type === 'month',
+      (part) =>
+        part.type === 'month',
     )?.value;
 
   const day =
     parts.find(
-      (part) => part.type === 'day',
+      (part) =>
+        part.type === 'day',
     )?.value;
 
   return `${year}-${month}-${day}`;
@@ -403,24 +440,41 @@ function getTimeZoneOffsetMs(
       'en-GB',
       {
         timeZone,
-        hourCycle: 'h23',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+
+        hourCycle:
+          'h23',
+
+        year:
+          'numeric',
+
+        month:
+          '2-digit',
+
+        day:
+          '2-digit',
+
+        hour:
+          '2-digit',
+
+        minute:
+          '2-digit',
+
+        second:
+          '2-digit',
       },
     );
 
-  const parts = formatter.formatToParts(date);
+  const parts =
+    formatter.formatToParts(date);
 
-  const value = (type) =>
-    Number(
-      parts.find(
-        (part) => part.type === type,
-      )?.value,
-    );
+  const value =
+    (type) =>
+      Number(
+        parts.find(
+          (part) =>
+            part.type === type,
+        )?.value,
+      );
 
   const asUTC =
     Date.UTC(
@@ -432,19 +486,26 @@ function getTimeZoneOffsetMs(
       value('second'),
     );
 
-  return asUTC - date.getTime();
+  return (
+    asUTC -
+    date.getTime()
+  );
 }
 
 
 /* =========================================================
-   DATA/HORA PORTUGAL -> UTC
+   DATA/HORA LISBOA -> UTC
 ========================================================= */
 
 export function bookingDateTimeToUtc(
   dateString,
   timeString,
 ) {
-  if (!isValidBookingDate(dateString)) {
+  if (
+    !isValidBookingDate(
+      dateString,
+    )
+  ) {
     return new Date(NaN);
   }
 
@@ -458,16 +519,27 @@ export function bookingDateTimeToUtc(
       String(timeString || ''),
     );
 
-  if (!dateMatch || !timeMatch) {
+  if (
+    !dateMatch ||
+    !timeMatch
+  ) {
     return new Date(NaN);
   }
 
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
+  const year =
+    Number(dateMatch[1]);
 
-  const hours = Number(timeMatch[1]);
-  const minutes = Number(timeMatch[2]);
+  const month =
+    Number(dateMatch[2]);
+
+  const day =
+    Number(dateMatch[3]);
+
+  const hours =
+    Number(timeMatch[1]);
+
+  const minutes =
+    Number(timeMatch[2]);
 
   if (
     !Number.isInteger(hours) ||
@@ -500,7 +572,8 @@ export function bookingDateTimeToUtc(
 
   let result =
     new Date(
-      wallClock.getTime() - offset,
+      wallClock.getTime() -
+        offset,
     );
 
   const correctedOffset =
@@ -509,7 +582,9 @@ export function bookingDateTimeToUtc(
       BOOKING_TIME_ZONE,
     );
 
-  if (correctedOffset !== offset) {
+  if (
+    correctedOffset !== offset
+  ) {
     result =
       new Date(
         wallClock.getTime() -
@@ -522,7 +597,7 @@ export function bookingDateTimeToUtc(
 
 
 /* =========================================================
-   ANTECEDÊNCIA MÍNIMA
+   8 HORAS DE ANTECEDÊNCIA
 ========================================================= */
 
 export function hasMinimumNotice(
@@ -568,8 +643,11 @@ export function isValidBookingSlot(
   dateString = '',
   location = '',
 ) {
-  const start = timeToMinutes(time);
-  const numericDuration = Number(duration);
+  const start =
+    timeToMinutes(time);
+
+  const numericDuration =
+    Number(duration);
 
   if (
     !Number.isFinite(start) ||
@@ -580,7 +658,8 @@ export function isValidBookingSlot(
   }
 
   const end =
-    start + numericDuration;
+    start +
+    numericDuration;
 
   const openingPeriods =
     getOpeningPeriodsForDate(
@@ -591,10 +670,14 @@ export function isValidBookingSlot(
   return openingPeriods.some(
     (period) => {
       const periodStart =
-        timeToMinutes(period.start);
+        timeToMinutes(
+          period.start,
+        );
 
       const periodEnd =
-        timeToMinutes(period.end);
+        timeToMinutes(
+          period.end,
+        );
 
       return (
         start >= periodStart &&
@@ -603,8 +686,7 @@ export function isValidBookingSlot(
           start -
           periodStart
         ) %
-          SLOT_INTERVAL ===
-          0
+          SLOT_INTERVAL === 0
       );
     },
   );
@@ -621,8 +703,11 @@ export function rangesOverlap(
   startB,
   durationB,
 ) {
-  const numericStartA = Number(startA);
-  const numericStartB = Number(startB);
+  const numericStartA =
+    Number(startA);
+
+  const numericStartB =
+    Number(startB);
 
   const endA =
     numericStartA +
@@ -640,7 +725,7 @@ export function rangesOverlap(
 
 
 /* =========================================================
-   DISTÂNCIA DA MARCAÇÃO MAIS PRÓXIMA
+   DISTÂNCIA À MARCAÇÃO MAIS PRÓXIMA
 ========================================================= */
 
 function getAppointmentAdjacencyDistance(
@@ -682,28 +767,36 @@ function getAppointmentAdjacencyDistance(
         appointmentDuration;
 
       if (
-        appointmentEnd <= slotStart
+        appointmentEnd <=
+        slotStart
       ) {
         distances.push(
-          slotStart - appointmentEnd,
+          slotStart -
+            appointmentEnd,
         );
       }
 
       if (
-        appointmentStart >= slotEnd
+        appointmentStart >=
+        slotEnd
       ) {
         distances.push(
-          appointmentStart - slotEnd,
+          appointmentStart -
+            slotEnd,
         );
       }
     },
   );
 
-  if (distances.length === 0) {
+  if (
+    distances.length === 0
+  ) {
     return 120;
   }
 
-  return Math.min(...distances);
+  return Math.min(
+    ...distances,
+  );
 }
 
 
@@ -719,11 +812,17 @@ export function getSuggestedBookingSlots({
   limit = 4,
 }) {
   const preferredMinutes =
-    timeToMinutes(preferredTime);
+    timeToMinutes(
+      preferredTime,
+    );
 
   if (
-    !Number.isFinite(preferredMinutes) ||
-    !Array.isArray(availableTimes) ||
+    !Number.isFinite(
+      preferredMinutes,
+    ) ||
+    !Array.isArray(
+      availableTimes,
+    ) ||
     availableTimes.length === 0
   ) {
     return [];
@@ -776,7 +875,9 @@ export function getSuggestedBookingSlots({
       })
       .filter(Boolean);
 
-  if (candidates.length === 0) {
+  if (
+    candidates.length === 0
+  ) {
     return [];
   }
 
@@ -915,7 +1016,9 @@ export function getSuggestedBookingSlots({
       if (
         selected.length < limit
       ) {
-        addCandidate(candidate);
+        addCandidate(
+          candidate,
+        );
       }
     },
   );
@@ -924,7 +1027,8 @@ export function getSuggestedBookingSlots({
     .slice(0, limit)
     .map(
       (candidate) => ({
-        time: candidate.time,
+        time:
+          candidate.time,
 
         requested:
           candidate.requested,

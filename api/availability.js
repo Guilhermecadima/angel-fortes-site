@@ -12,10 +12,52 @@ import {
   hasMinimumNotice,
   isSunday,
   isValidBookingDate,
+  isValidBookingSlot,
   rangesOverlap,
   timeToMinutes,
 } from '../src/utils/bookingRules.js';
 
+
+/* =========================================================
+   ADICIONAR DIAS A YYYY-MM-DD
+========================================================= */
+
+function addDaysToDateString(
+  dateString,
+  days,
+) {
+  if (!isValidBookingDate(dateString)) {
+    return '';
+  }
+
+  const [year, month, day] =
+    dateString
+      .split('-')
+      .map(Number);
+
+  const date =
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        day,
+      ),
+    );
+
+  date.setUTCDate(
+    date.getUTCDate() +
+      Number(days),
+  );
+
+  return date
+    .toISOString()
+    .slice(0, 10);
+}
+
+
+/* =========================================================
+   HANDLER
+========================================================= */
 
 export default async function handler(
   req,
@@ -30,7 +72,9 @@ export default async function handler(
     });
   }
 
+
   try {
+
     const location =
       typeof req.query.location ===
       'string'
@@ -78,7 +122,11 @@ export default async function handler(
       'costa_caparica',
     ];
 
-    if (!validLocations.includes(location)) {
+    if (
+      !validLocations.includes(
+        location,
+      )
+    ) {
       return res.status(400).json({
         message:
           'Loja inválida.',
@@ -87,16 +135,13 @@ export default async function handler(
 
 
     /* =====================================================
-       DATA REAL
-
-       Impede datas impossíveis:
-       2026-02-30
-       2026-04-31
-       etc.
+       DATA
     ===================================================== */
 
     if (
-      !isValidBookingDate(date)
+      !isValidBookingDate(
+        date,
+      )
     ) {
       return res.status(400).json({
         message:
@@ -106,7 +151,7 @@ export default async function handler(
 
 
     /* =====================================================
-       HORA
+       HORA PRETENDIDA
     ===================================================== */
 
     const preferredMinutes =
@@ -133,8 +178,8 @@ export default async function handler(
     const selectedService =
       services.find(
         (service) =>
-          service.id ===
-          serviceId,
+          String(service.id) ===
+          String(serviceId),
       );
 
     if (!selectedService) {
@@ -154,13 +199,26 @@ export default async function handler(
     ) {
       return res.status(200).json({
         success: true,
+
+        requestedTime:
+          preferredTime,
+
+        requestedTimeAvailable:
+          false,
+
+        blockedByMinimumNotice:
+          false,
+
+        nextDaySuggestion:
+          null,
+
         suggestedTimes: [],
       });
     }
 
 
     /* =====================================================
-       MARCAÇÕES EXISTENTES
+       MARCAÇÕES EXISTENTES DESSE DIA / LOJA
     ===================================================== */
 
     const {
@@ -190,13 +248,14 @@ export default async function handler(
           'cancelled',
         );
 
+
     if (error) {
       throw error;
     }
 
 
     /* =====================================================
-       SLOTS
+       GERAR SLOTS DESSE DIA
     ===================================================== */
 
     const allSlots =
@@ -208,12 +267,18 @@ export default async function handler(
 
 
     /* =====================================================
-       FILTRAR HORÁRIOS LIVRES
+       FILTRAR HORÁRIOS DISPONÍVEIS
+
+       Aqui são removidos:
+       - horários com menos de 8h
+       - horários que chocam com outra marcação
+       - horários fora dos períodos definidos no bookingRules
     ===================================================== */
 
     const availableTimes =
       allSlots.filter(
         (slot) => {
+
           if (
             !hasMinimumNotice(
               date,
@@ -223,16 +288,19 @@ export default async function handler(
             return false;
           }
 
+
           const slotStart =
             timeToMinutes(
               slot,
             );
+
 
           const hasConflict =
             (
               appointments || []
             ).some(
               (appointment) => {
+
                 if (
                   !appointment
                     .appointment_time ||
@@ -241,6 +309,7 @@ export default async function handler(
                 ) {
                   return false;
                 }
+
 
                 const existingStart =
                   timeToMinutes(
@@ -254,6 +323,7 @@ export default async function handler(
                       .duration,
                   );
 
+
                 if (
                   !Number.isFinite(
                     existingStart,
@@ -265,23 +335,26 @@ export default async function handler(
                   return false;
                 }
 
+
                 return rangesOverlap(
                   slotStart,
-                  selectedService
-                    .duration,
+                  selectedService.duration,
                   existingStart,
                   existingDuration,
                 );
+
               },
             );
 
+
           return !hasConflict;
+
         },
       );
 
 
     /* =====================================================
-       SUGESTÕES
+       SUGESTÕES NORMAIS PARA O DIA ESCOLHIDO
     ===================================================== */
 
     const suggestedTimes =
@@ -298,6 +371,191 @@ export default async function handler(
 
         limit: 4,
       });
+
+
+    /* =====================================================
+       VER SE A HORA PEDIDA EXISTE NO HORÁRIO NORMAL DO DIA
+    ===================================================== */
+
+    const requestedSlotIsValidToday =
+      isValidBookingSlot(
+        preferredTime,
+        selectedService.duration,
+        date,
+        location,
+      );
+
+
+    /* =====================================================
+       FOI BLOQUEADA ESPECIFICAMENTE PELAS 8 HORAS?
+    ===================================================== */
+
+    const blockedByMinimumNotice =
+      requestedSlotIsValidToday &&
+      !hasMinimumNotice(
+        date,
+        preferredTime,
+      );
+
+
+    /* =====================================================
+       SUGESTÃO DO DIA SEGUINTE
+
+       Só procuramos amanhã quando:
+       - aquela hora seria válida hoje
+       - o problema são apenas as 8 horas de antecedência
+
+       Depois validamos:
+       - amanhã a mesma loja abre nessa hora
+       - o serviço cabe no horário
+       - amanhã já cumpre as 8 horas
+       - a hora não está ocupada
+    ===================================================== */
+
+    let nextDaySuggestion =
+      null;
+
+
+    if (
+      blockedByMinimumNotice
+    ) {
+
+      const nextDate =
+        addDaysToDateString(
+          date,
+          1,
+        );
+
+
+      const sameTimeIsValidTomorrow =
+        Boolean(nextDate) &&
+        isValidBookingSlot(
+          preferredTime,
+          selectedService.duration,
+          nextDate,
+          location,
+        ) &&
+        hasMinimumNotice(
+          nextDate,
+          preferredTime,
+        );
+
+
+      if (
+        sameTimeIsValidTomorrow
+      ) {
+
+        const {
+          data:
+            nextDayAppointments,
+
+          error:
+            nextDayError,
+        } =
+          await supabaseAdmin
+            .from(
+              'appointments',
+            )
+            .select(`
+              id,
+              appointment_time,
+              duration,
+              status
+            `)
+            .eq(
+              'appointment_date',
+              nextDate,
+            )
+            .eq(
+              'location',
+              location,
+            )
+            .neq(
+              'status',
+              'cancelled',
+            );
+
+
+        if (nextDayError) {
+          throw nextDayError;
+        }
+
+
+        const requestedStartTomorrow =
+          timeToMinutes(
+            preferredTime,
+          );
+
+
+        const hasTomorrowConflict =
+          (
+            nextDayAppointments || []
+          ).some(
+            (appointment) => {
+
+              if (
+                !appointment
+                  .appointment_time ||
+                !appointment
+                  .duration
+              ) {
+                return false;
+              }
+
+
+              const existingStart =
+                timeToMinutes(
+                  appointment
+                    .appointment_time,
+                );
+
+              const existingDuration =
+                Number(
+                  appointment
+                    .duration,
+                );
+
+
+              if (
+                !Number.isFinite(
+                  existingStart,
+                ) ||
+                !Number.isFinite(
+                  existingDuration,
+                )
+              ) {
+                return false;
+              }
+
+
+              return rangesOverlap(
+                requestedStartTomorrow,
+                selectedService.duration,
+                existingStart,
+                existingDuration,
+              );
+
+            },
+          );
+
+
+        if (
+          !hasTomorrowConflict
+        ) {
+
+          nextDaySuggestion = {
+            date:
+              nextDate,
+
+            time:
+              preferredTime,
+          };
+
+        }
+
+      }
+
+    }
 
 
     /* =====================================================
@@ -319,18 +577,27 @@ export default async function handler(
             preferredMinutes,
         ),
 
+      blockedByMinimumNotice,
+
+      nextDaySuggestion,
+
       suggestedTimes,
     });
+
+
   } catch (error) {
+
     console.error(
       'Erro availability:',
       error,
     );
+
 
     return res.status(500).json({
       message:
         error?.message ||
         'Erro ao verificar horários.',
     });
+
   }
 }
