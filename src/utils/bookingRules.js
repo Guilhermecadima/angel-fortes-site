@@ -1,6 +1,6 @@
 export const BOOKING_TIME_ZONE = 'Europe/Lisbon';
 
-export const MIN_BOOKING_NOTICE_HOURS = 8;
+export const MIN_BOOKING_NOTICE_HOURS = 0;
 
 export const SLOT_INTERVAL = 10;
 
