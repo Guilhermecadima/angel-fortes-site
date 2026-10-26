@@ -239,34 +239,38 @@ export function getOpeningPeriodsForDate(
     location === 'santa_marta'
   ) {
 
-    // Quarta-feira:
-    // descanso em Santa Marta
-    if (
-      dayOfWeek === 3
-    ) {
-      return [];
-    }
+// Quarta-feira:
+// descanso em Santa Marta
+if (
+  dayOfWeek === 3
+) {
+  return [];
+}
 
 
-    // Sábado começa às 08:00
-    if (
-      dayOfWeek === 6
-    ) {
-      return [
-        {
-          start: '08:00',
-          end: '13:00',
-        },
-        {
-          start: '15:00',
-          end: '19:00',
-        },
-      ];
-    }
+// Sábado começa às 08:00
+if (
+  dayOfWeek === 6
+) {
+  return [
+    {
+      start: '08:00',
+      end: '13:00',
+    },
+    {
+      start: '15:00',
+      end: '19:00',
+    },
+  ];
+}
 
 
-    // Segunda, terça,
-    // quinta e sexta
+// Segunda-feira:
+// dia todo em Santa Marta
+// com almoço 13:00 - 15:00
+  if (
+    dayOfWeek === 1
+  ) {
     return [
       {
         start: '09:00',
@@ -278,6 +282,20 @@ export function getOpeningPeriodsForDate(
       },
     ];
   }
+
+
+  // Terça, quinta e sexta
+  return [
+    {
+      start: '09:00',
+      end: '13:00',
+    },
+    {
+      start: '15:00',
+      end: '19:00',
+    },
+  ];
+}
 
 
   /* =======================================================
