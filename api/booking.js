@@ -269,6 +269,15 @@ export default async function handler(
     }
 
 
+    const professionalId =
+      selectedService.professionalId ||
+      'angelo';
+
+    const professionalName =
+      selectedService.professionalName ||
+      'Ângelo';
+
+
     /* =====================================================
        DOMINGO
     ===================================================== */
@@ -289,14 +298,14 @@ export default async function handler(
        HORÁRIO
     ===================================================== */
 
-      if (
-        !isValidBookingSlot(
-          cleanTime,
-          selectedService.duration,
-          cleanDate,
-          cleanLocation,
-        )
-      ) {
+    if (
+      !isValidBookingSlot(
+        cleanTime,
+        selectedService.duration,
+        cleanDate,
+        cleanLocation,
+      )
+    ) {
       return res.status(400).json({
         message:
           'Horário inválido.',
@@ -305,7 +314,7 @@ export default async function handler(
 
 
     /* =====================================================
-       ANTECEDÊNCIA
+       HORA JÁ PASSOU?
     ===================================================== */
 
     if (
@@ -316,13 +325,13 @@ export default async function handler(
     ) {
       return res.status(400).json({
         message:
-          'As marcações devem ser feitas com pelo menos 8 horas de antecedência.',
+          'Esse horário já passou.',
       });
     }
 
 
     /* =====================================================
-       MARCAÇÕES EXISTENTES
+       MARCAÇÕES EXISTENTES DO PROFISSIONAL
     ===================================================== */
 
     const {
@@ -340,15 +349,17 @@ export default async function handler(
           id,
           appointment_time,
           duration,
-          status
+          status,
+          professional_id,
+          professional_name
         `)
         .eq(
           'appointment_date',
           cleanDate,
         )
         .eq(
-          'location',
-          cleanLocation,
+          'professional_id',
+          professionalId,
         )
         .neq(
           'status',
@@ -441,6 +452,12 @@ export default async function handler(
         .insert({
           location:
             cleanLocation,
+
+          professional_id:
+            professionalId,
+
+          professional_name:
+            professionalName,
 
           name:
             cleanName,
@@ -550,6 +567,11 @@ export default async function handler(
           selectedService.name,
         );
 
+      const safeProfessional =
+        escapeHtml(
+          professionalName,
+        );
+
       const safeLocation =
         escapeHtml(
           validLocations[cleanLocation],
@@ -569,9 +591,10 @@ export default async function handler(
 
       const safePrice =
         escapeHtml(
-          Number(
-            selectedService.price,
-          ).toFixed(2),
+          selectedService.priceLabel ||
+            `${Number(
+              selectedService.price,
+            ).toFixed(2)} €`,
         );
 
 
@@ -716,6 +739,14 @@ export default async function handler(
 
                     <p>
                       <strong>
+                        Profissional:
+                      </strong>
+
+                      ${safeProfessional}
+                    </p>
+
+                    <p>
+                      <strong>
                         Duração:
                       </strong>
 
@@ -744,7 +775,7 @@ export default async function handler(
                         Preço:
                       </strong>
 
-                      ${safePrice} €
+                      ${safePrice}
                     </p>
 
 
@@ -969,6 +1000,37 @@ export default async function handler(
                           text-transform:uppercase;
                         "
                       >
+                        Profissional
+                      </div>
+
+                      <div
+                        style="
+                          margin-top:4px;
+                          font-size:17px;
+                        "
+                      >
+                        ${safeProfessional}
+                      </div>
+
+                    </div>
+
+
+                    <div
+                      style="
+                        margin-bottom:
+                          16px;
+                      "
+                    >
+
+                      <div
+                        style="
+                          color:#8a7d62;
+                          font-size:11px;
+                          font-weight:bold;
+                          letter-spacing:1px;
+                          text-transform:uppercase;
+                        "
+                      >
                         Data
                       </div>
 
@@ -1037,7 +1099,7 @@ export default async function handler(
                           font-weight:bold;
                         "
                       >
-                        ${safePrice} €
+                        ${safePrice}
                       </div>
 
                     </div>

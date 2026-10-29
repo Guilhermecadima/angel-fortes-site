@@ -4,10 +4,17 @@ import {
   useState,
 } from 'react';
 
-import { services } from '../../data/services';
+import {
+  services,
+} from '../../data/services';
 
-import { formatCurrency } from '../../utils/currency';
-import { saveBooking } from '../../utils/storage';
+import {
+  formatCurrency,
+} from '../../utils/currency';
+
+import {
+  saveBooking,
+} from '../../utils/storage';
 
 import {
   getTodayInBookingTimeZone,
@@ -25,37 +32,36 @@ export default function BookingModal({
   onClose,
 }) {
 
-  const [serviceId, setServiceId] =
-    useState(null);
+  const [
+    serviceId,
+    setServiceId,
+  ] = useState(null);
 
-  const [location, setLocation] =
-    useState('');
 
-  const [date, setDate] =
-    useState('');
+  const [
+    location,
+    setLocation,
+  ] = useState('');
 
-  /*
-   * Hora que o cliente gostaria
-   * idealmente de marcar.
-   */
+
+  const [
+    date,
+    setDate,
+  ] = useState('');
+
+
   const [
     preferredTime,
     setPreferredTime,
   ] = useState('');
 
 
-  /*
-   * Hora efetivamente escolhida
-   * entre as sugestões.
-   */
-  const [time, setTime] =
-    useState('');
+  const [
+    time,
+    setTime,
+  ] = useState('');
 
 
-  /*
-   * Sugestões disponíveis para
-   * o dia selecionado.
-   */
   const [
     suggestedTimes,
     setSuggestedTimes,
@@ -63,9 +69,10 @@ export default function BookingModal({
 
 
   /*
-   * Se as 8 horas impedirem
-   * a marcação, a API pode
-   * sugerir amanhã à mesma hora.
+   * Se a hora escolhida
+   * já tiver passado hoje,
+   * a API pode sugerir
+   * amanhã à mesma hora.
    */
   const [
     nextDaySuggestion,
@@ -79,22 +86,54 @@ export default function BookingModal({
   ] = useState(false);
 
 
-  const [form, setForm] =
-    useState({
-      name: '',
-      phone: '',
-      email: '',
-    });
+  const [
+    form,
+    setForm,
+  ] = useState({
+    name: '',
+    phone: '',
+    email: '',
+  });
 
 
-  const [sending, setSending] =
-    useState(false);
+  const [
+    sending,
+    setSending,
+  ] = useState(false);
 
-  const [error, setError] =
-    useState('');
 
-  const [success, setSuccess] =
-    useState(false);
+  const [
+    error,
+    setError,
+  ] = useState('');
+
+
+  const [
+    success,
+    setSuccess,
+  ] = useState(false);
+
+
+  /* =======================================================
+     SERVIÇO SELECIONADO
+  ======================================================= */
+
+  const selectedService =
+    useMemo(
+      () =>
+        services.find(
+          (service) =>
+            String(
+              service.id,
+            ) ===
+            String(
+              serviceId,
+            ),
+        ),
+      [
+        serviceId,
+      ],
+    );
 
 
   /* =======================================================
@@ -103,26 +142,50 @@ export default function BookingModal({
 
   useEffect(() => {
 
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
 
     setServiceId(
-      initialServiceId || null,
+      initialServiceId ||
+      null,
     );
 
-    setLocation('');
 
-    setDate('');
+    setLocation(
+      '',
+    );
 
-    setPreferredTime('');
 
-    setTime('');
+    setDate(
+      '',
+    );
 
-    setSuggestedTimes([]);
 
-    setNextDaySuggestion(null);
+    setPreferredTime(
+      '',
+    );
 
-    setLoadingTimes(false);
+
+    setTime(
+      '',
+    );
+
+
+    setSuggestedTimes(
+      [],
+    );
+
+
+    setNextDaySuggestion(
+      null,
+    );
+
+
+    setLoadingTimes(
+      false,
+    );
 
 
     setForm({
@@ -132,11 +195,19 @@ export default function BookingModal({
     });
 
 
-    setSending(false);
+    setSending(
+      false,
+    );
 
-    setError('');
 
-    setSuccess(false);
+    setError(
+      '',
+    );
+
+
+    setSuccess(
+      false,
+    );
 
   }, [
     open,
@@ -150,41 +221,35 @@ export default function BookingModal({
 
   useEffect(() => {
 
-    if (!open) return;
+    if (!open) {
+      return undefined;
+    }
 
 
     const previousOverflow =
-      document.body.style.overflow;
+      document.body
+        .style
+        .overflow;
 
 
-    document.body.style.overflow =
+    document.body
+      .style
+      .overflow =
       'hidden';
 
 
     return () => {
 
-      document.body.style.overflow =
+      document.body
+        .style
+        .overflow =
         previousOverflow;
 
     };
 
-  }, [open]);
-
-
-  /* =======================================================
-     SERVIÇO SELECIONADO
-  ======================================================= */
-
-  const selectedService =
-    useMemo(
-      () =>
-        services.find(
-          (service) =>
-            String(service.id) ===
-            String(serviceId),
-        ),
-      [serviceId],
-    );
+  }, [
+    open,
+  ]);
 
 
   /* =======================================================
@@ -201,11 +266,17 @@ export default function BookingModal({
       !preferredTime
     ) {
 
-      setSuggestedTimes([]);
+      setSuggestedTimes(
+        [],
+      );
 
-      setNextDaySuggestion(null);
 
-      return;
+      setNextDaySuggestion(
+        null,
+      );
+
+
+      return undefined;
 
     }
 
@@ -217,15 +288,29 @@ export default function BookingModal({
     const loadSuggestions =
       async () => {
 
-        setLoadingTimes(true);
+        setLoadingTimes(
+          true,
+        );
 
-        setSuggestedTimes([]);
 
-        setNextDaySuggestion(null);
+        setSuggestedTimes(
+          [],
+        );
 
-        setTime('');
 
-        setError('');
+        setNextDaySuggestion(
+          null,
+        );
+
+
+        setTime(
+          '',
+        );
+
+
+        setError(
+          '',
+        );
 
 
         try {
@@ -250,7 +335,8 @@ export default function BookingModal({
               `/api/availability?${params.toString()}`,
               {
                 signal:
-                  controller.signal,
+                  controller
+                    .signal,
               },
             );
 
@@ -259,15 +345,18 @@ export default function BookingModal({
             await response
               .json()
               .catch(
-                () => null,
+                () =>
+                  null,
               );
 
 
-          if (!response.ok) {
+          if (
+            !response.ok
+          ) {
 
             throw new Error(
               data?.message ||
-                'Erro ao verificar horários.',
+              'Erro ao verificar horários.',
             );
 
           }
@@ -284,15 +373,18 @@ export default function BookingModal({
 
           setSuggestedTimes(
             Array.isArray(
-              data?.suggestedTimes,
+              data
+                ?.suggestedTimes,
             )
-              ? data.suggestedTimes
+              ? data
+                  .suggestedTimes
               : [],
           );
 
 
-          setNextDaySuggestion(
-            data?.nextDaySuggestion &&
+          if (
+            data
+              ?.nextDaySuggestion &&
             typeof data
               .nextDaySuggestion
               .date ===
@@ -301,13 +393,25 @@ export default function BookingModal({
               .nextDaySuggestion
               .time ===
               'string'
-              ? data
-                  .nextDaySuggestion
-              : null,
-          );
+          ) {
+
+            setNextDaySuggestion(
+              data
+                .nextDaySuggestion,
+            );
+
+          } else {
+
+            setNextDaySuggestion(
+              null,
+            );
+
+          }
 
 
-        } catch (err) {
+        } catch (
+          err
+        ) {
 
           if (
             err.name ===
@@ -323,7 +427,10 @@ export default function BookingModal({
           );
 
 
-          setSuggestedTimes([]);
+          setSuggestedTimes(
+            [],
+          );
+
 
           setNextDaySuggestion(
             null,
@@ -332,7 +439,7 @@ export default function BookingModal({
 
           setError(
             err.message ||
-              'Não foi possível verificar os horários.',
+            'Não foi possível verificar os horários.',
           );
 
 
@@ -374,18 +481,28 @@ export default function BookingModal({
 
 
   /* =======================================================
-     SERVIÇO
+     QUANDO MUDA O SERVIÇO
   ======================================================= */
 
   useEffect(() => {
 
-    setTime('');
+    setTime(
+      '',
+    );
 
-    setSuggestedTimes([]);
 
-    setNextDaySuggestion(null);
+    setSuggestedTimes(
+      [],
+    );
 
-  }, [serviceId]);
+
+    setNextDaySuggestion(
+      null,
+    );
+
+  }, [
+    serviceId,
+  ]);
 
 
   /* =======================================================
@@ -393,22 +510,37 @@ export default function BookingModal({
   ======================================================= */
 
   const handleDateChange =
-    (event) => {
+    (
+      event,
+    ) => {
 
       const nextDate =
-        event.target.value;
+        event
+          .target
+          .value;
 
 
       if (
         nextDate &&
-        isSunday(nextDate)
+        isSunday(
+          nextDate,
+        )
       ) {
 
-        setDate('');
+        setDate(
+          '',
+        );
 
-        setTime('');
 
-        setSuggestedTimes([]);
+        setTime(
+          '',
+        );
+
+
+        setSuggestedTimes(
+          [],
+        );
+
 
         setNextDaySuggestion(
           null,
@@ -425,17 +557,29 @@ export default function BookingModal({
       }
 
 
-      setDate(nextDate);
+      setDate(
+        nextDate,
+      );
 
-      setTime('');
 
-      setSuggestedTimes([]);
+      setTime(
+        '',
+      );
+
+
+      setSuggestedTimes(
+        [],
+      );
+
 
       setNextDaySuggestion(
         null,
       );
 
-      setError('');
+
+      setError(
+        '',
+      );
 
     };
 
@@ -445,21 +589,35 @@ export default function BookingModal({
   ======================================================= */
 
   const handlePreferredTimeChange =
-    (event) => {
+    (
+      event,
+    ) => {
 
       setPreferredTime(
-        event.target.value,
+        event
+          .target
+          .value,
       );
 
-      setTime('');
 
-      setSuggestedTimes([]);
+      setTime(
+        '',
+      );
+
+
+      setSuggestedTimes(
+        [],
+      );
+
 
       setNextDaySuggestion(
         null,
       );
 
-      setError('');
+
+      setError(
+        '',
+      );
 
     };
 
@@ -508,42 +666,59 @@ export default function BookingModal({
           await response
             .json()
             .catch(
-              () => null,
+              () =>
+                null,
             );
 
 
         if (
-          response.ok
+          !response.ok
+        ) {
+          return;
+        }
+
+
+        setSuggestedTimes(
+          Array.isArray(
+            data
+              ?.suggestedTimes,
+          )
+            ? data
+                .suggestedTimes
+            : [],
+        );
+
+
+        if (
+          data
+            ?.nextDaySuggestion &&
+          typeof data
+            .nextDaySuggestion
+            .date ===
+            'string' &&
+          typeof data
+            .nextDaySuggestion
+            .time ===
+            'string'
         ) {
 
-          setSuggestedTimes(
-            Array.isArray(
-              data?.suggestedTimes,
-            )
-              ? data.suggestedTimes
-              : [],
+          setNextDaySuggestion(
+            data
+              .nextDaySuggestion,
           );
 
+        } else {
 
           setNextDaySuggestion(
-            data?.nextDaySuggestion &&
-            typeof data
-              .nextDaySuggestion
-              .date ===
-              'string' &&
-            typeof data
-              .nextDaySuggestion
-              .time ===
-              'string'
-              ? data
-                  .nextDaySuggestion
-              : null,
+            null,
           );
 
         }
 
 
-      } catch (err) {
+      } catch (
+        err
+      ) {
 
         console.error(
           'Erro ao atualizar disponibilidade:',
@@ -556,7 +731,7 @@ export default function BookingModal({
 
 
   /* =======================================================
-     IR PARA A SUGESTÃO DE AMANHÃ
+     USAR SUGESTÃO DO DIA SEGUINTE
   ======================================================= */
 
   const useNextDaySuggestion =
@@ -570,24 +745,35 @@ export default function BookingModal({
 
 
       setDate(
-        nextDaySuggestion.date,
+        nextDaySuggestion
+          .date,
       );
 
 
       setPreferredTime(
-        nextDaySuggestion.time,
+        nextDaySuggestion
+          .time,
       );
 
 
-      setTime('');
+      setTime(
+        '',
+      );
 
-      setSuggestedTimes([]);
+
+      setSuggestedTimes(
+        [],
+      );
+
 
       setNextDaySuggestion(
         null,
       );
 
-      setError('');
+
+      setError(
+        '',
+      );
 
     };
 
@@ -597,12 +783,17 @@ export default function BookingModal({
   ======================================================= */
 
   const submit =
-    async (event) => {
+    async (
+      event,
+    ) => {
 
-      event.preventDefault();
+      event
+        .preventDefault();
 
 
-      if (!selectedService) {
+      if (
+        !selectedService
+      ) {
 
         setError(
           'Escolhe primeiro um serviço.',
@@ -613,7 +804,22 @@ export default function BookingModal({
       }
 
 
-      if (!date) {
+      if (
+        !location
+      ) {
+
+        setError(
+          'Escolhe primeiro a loja.',
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !date
+      ) {
 
         setError(
           'Escolhe uma data.',
@@ -624,7 +830,9 @@ export default function BookingModal({
       }
 
 
-      if (!preferredTime) {
+      if (
+        !preferredTime
+      ) {
 
         setError(
           'Indica a hora a que gostarias de marcar.',
@@ -635,7 +843,9 @@ export default function BookingModal({
       }
 
 
-      if (!time) {
+      if (
+        !time
+      ) {
 
         setError(
           'Escolhe um dos horários disponíveis.',
@@ -647,9 +857,15 @@ export default function BookingModal({
 
 
       if (
-        !form.name.trim() ||
-        !form.phone.trim() ||
-        !form.email.trim()
+        !form
+          .name
+          .trim() ||
+        !form
+          .phone
+          .trim() ||
+        !form
+          .email
+          .trim()
       ) {
 
         setError(
@@ -661,9 +877,14 @@ export default function BookingModal({
       }
 
 
-      setSending(true);
+      setSending(
+        true,
+      );
 
-      setError('');
+
+      setError(
+        '',
+      );
 
 
       const booking = {
@@ -679,11 +900,23 @@ export default function BookingModal({
         service:
           selectedService.name,
 
+        professionalId:
+          selectedService
+            .professionalId ||
+          'angelo',
+
+        professionalName:
+          selectedService
+            .professionalName ||
+          'Ângelo',
+
         price:
-          selectedService.price,
+          selectedService
+            .price,
 
         duration:
-          selectedService.duration,
+          selectedService
+            .duration,
 
         date,
 
@@ -692,13 +925,19 @@ export default function BookingModal({
         preferredTime,
 
         name:
-          form.name.trim(),
+          form
+            .name
+            .trim(),
 
         phone:
-          form.phone.trim(),
+          form
+            .phone
+            .trim(),
 
         email:
-          form.email.trim(),
+          form
+            .email
+            .trim(),
 
         status:
           'Confirmado',
@@ -726,28 +965,33 @@ export default function BookingModal({
 
               body:
                 JSON.stringify({
-
                   location:
-                    booking.location,
+                    booking
+                      .location,
 
                   name:
-                    booking.name,
+                    booking
+                      .name,
 
                   phone:
-                    booking.phone,
+                    booking
+                      .phone,
 
                   email:
-                    booking.email,
+                    booking
+                      .email,
 
                   serviceId:
-                    booking.serviceId,
+                    booking
+                      .serviceId,
 
                   date:
-                    booking.date,
+                    booking
+                      .date,
 
                   time:
-                    booking.time,
-
+                    booking
+                      .time,
                 }),
             },
           );
@@ -757,7 +1001,8 @@ export default function BookingModal({
           await response
             .json()
             .catch(
-              () => null,
+              () =>
+                null,
             );
 
 
@@ -777,7 +1022,9 @@ export default function BookingModal({
             409
           ) {
 
-            setTime('');
+            setTime(
+              '',
+            );
 
 
             await refreshAvailability();
@@ -785,7 +1032,7 @@ export default function BookingModal({
 
             throw new Error(
               data?.message ||
-                'Esse horário acabou de ficar ocupado. Vê as novas sugestões.',
+              'Esse horário acabou de ficar ocupado. Vê as novas sugestões.',
             );
 
           }
@@ -793,7 +1040,7 @@ export default function BookingModal({
 
           throw new Error(
             data?.message ||
-              `Erro /api/booking: ${response.status}`,
+            `Erro /api/booking: ${response.status}`,
           );
 
         }
@@ -810,10 +1057,14 @@ export default function BookingModal({
         );
 
 
-        setSuccess(true);
+        setSuccess(
+          true,
+        );
 
 
-      } catch (err) {
+      } catch (
+        err
+      ) {
 
         console.error(
           'Erro na marcação:',
@@ -823,13 +1074,15 @@ export default function BookingModal({
 
         setError(
           err.message ||
-            'Não foi possível concluir a marcação.',
+          'Não foi possível concluir a marcação.',
         );
 
 
       } finally {
 
-        setSending(false);
+        setSending(
+          false,
+        );
 
       }
 
@@ -840,7 +1093,9 @@ export default function BookingModal({
      FECHADO
   ========================================================= */
 
-  if (!open) {
+  if (
+    !open
+  ) {
     return null;
   }
 
@@ -849,19 +1104,25 @@ export default function BookingModal({
      SUCESSO
   ========================================================= */
 
-  if (success) {
+  if (
+    success
+  ) {
 
     return (
 
       <div
         className="modal-backdrop open"
-        onMouseDown={(event) => {
+        onMouseDown={(
+          event,
+        ) => {
 
           if (
             event.target ===
             event.currentTarget
           ) {
+
             onClose();
+
           }
 
         }}
@@ -877,16 +1138,22 @@ export default function BookingModal({
           <button
             type="button"
             className="close-btn modal-close"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
             aria-label="Fechar"
           >
             ×
           </button>
 
 
-          <div className="success-step">
+          <div
+            className="success-step"
+          >
 
-            <div className="success-icon">
+            <div
+              className="success-icon"
+            >
               ✓
             </div>
 
@@ -897,15 +1164,16 @@ export default function BookingModal({
 
 
             <p>
-              A tua marcação foi enviada
-              com sucesso.
+              A tua marcação foi enviada com sucesso.
             </p>
 
 
             <button
               type="button"
               className="btn btn-dark full"
-              onClick={onClose}
+              onClick={
+                onClose
+              }
             >
               Fechar
             </button>
@@ -929,13 +1197,17 @@ export default function BookingModal({
 
     <div
       className="modal-backdrop open"
-      onMouseDown={(event) => {
+      onMouseDown={(
+        event,
+      ) => {
 
         if (
           event.target ===
           event.currentTarget
         ) {
+
           onClose();
+
         }
 
       }}
@@ -951,7 +1223,9 @@ export default function BookingModal({
         <button
           type="button"
           className="close-btn modal-close"
-          onClick={onClose}
+          onClick={
+            onClose
+          }
           aria-label="Fechar"
         >
           ×
@@ -960,9 +1234,13 @@ export default function BookingModal({
 
         {/* HEADER */}
 
-        <div className="booking-head">
+        <div
+          className="booking-head"
+        >
 
-          <p className="eyebrow dark">
+          <p
+            className="eyebrow dark"
+          >
             Agendamento
           </p>
 
@@ -972,7 +1250,9 @@ export default function BookingModal({
           </h2>
 
 
-          <p className="booking-head-description">
+          <p
+            className="booking-head-description"
+          >
             Diz-nos quando gostarias de vir.
             Mostramos-te apenas os melhores
             horários disponíveis próximos.
@@ -983,50 +1263,80 @@ export default function BookingModal({
 
         <form
           className="booking-single-form"
-          onSubmit={submit}
+          onSubmit={
+            submit
+          }
         >
 
           {/* LOJA */}
 
-          <div className="booking-field booking-location-field">
+          <div
+            className="booking-field booking-location-field"
+          >
 
-            <label htmlFor="booking-location">
+            <label
+              htmlFor="booking-location"
+            >
               Escolhe a loja
             </label>
 
 
             <select
               id="booking-location"
-              value={location}
-              onChange={(event) => {
+              value={
+                location
+              }
+              onChange={(
+                event,
+              ) => {
 
                 setLocation(
-                  event.target.value,
+                  event
+                    .target
+                    .value,
                 );
 
-                setTime('');
 
-                setSuggestedTimes([]);
+                setTime(
+                  '',
+                );
+
+
+                setSuggestedTimes(
+                  [],
+                );
+
 
                 setNextDaySuggestion(
                   null,
                 );
 
-                setError('');
+
+                setError(
+                  '',
+                );
 
               }}
               required
             >
 
-              <option value="">
+              <option
+                value=""
+              >
                 Escolhe uma loja
               </option>
 
-              <option value="santa_marta">
+
+              <option
+                value="santa_marta"
+              >
                 Santa Marta do Pinhal
               </option>
 
-              <option value="costa_caparica">
+
+              <option
+                value="costa_caparica"
+              >
                 Costa da Caparica
               </option>
 
@@ -1037,16 +1347,24 @@ export default function BookingModal({
 
           {/* DATA + SERVIÇO */}
 
-          <div className="booking-single-top">
+          <div
+            className="booking-single-top"
+          >
 
-            <div className="booking-field">
+            <div
+              className="booking-field"
+            >
 
-              <label htmlFor="booking-date">
+              <label
+                htmlFor="booking-date"
+              >
                 Data da marcação
               </label>
 
 
-              <div className="native-picker-wrap">
+              <div
+                className="native-picker-wrap"
+              >
 
                 <input
                   id="booking-date"
@@ -1054,7 +1372,9 @@ export default function BookingModal({
                   min={
                     getTodayInBookingTimeZone()
                   }
-                  value={date}
+                  value={
+                    date
+                  }
                   onChange={
                     handleDateChange
                   }
@@ -1066,33 +1386,48 @@ export default function BookingModal({
             </div>
 
 
-            <div className="booking-field booking-service-field">
+            <div
+              className="booking-field booking-service-field"
+            >
 
-              <label htmlFor="booking-service">
-                Escolha o corte
+              <label
+                htmlFor="booking-service"
+              >
+                Escolhe o serviço
               </label>
 
 
               <select
                 id="booking-service"
                 value={
-                  serviceId || ''
+                  serviceId ||
+                  ''
                 }
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) => {
+
                   setServiceId(
-                    event.target.value,
-                  )
-                }
+                    event
+                      .target
+                      .value,
+                  );
+
+                }}
                 required
               >
 
-                <option value="">
+                <option
+                  value=""
+                >
                   Escolhe um serviço
                 </option>
 
 
                 {services.map(
-                  (service) => (
+                  (
+                    service,
+                  ) => (
 
                     <option
                       key={
@@ -1103,10 +1438,15 @@ export default function BookingModal({
                       }
                     >
                       {service.name}
+
                       {' — '}
-                      {formatCurrency(
-                        service.price,
-                      )}
+
+                      {
+                        service.priceLabel ||
+                        formatCurrency(
+                          service.price,
+                        )
+                      }
                     </option>
 
                   ),
@@ -1121,16 +1461,24 @@ export default function BookingModal({
 
           {/* HORA PRETENDIDA */}
 
-          <div className="preferred-time-block">
+          <div
+            className="preferred-time-block"
+          >
 
-            <div className="booking-field preferred-time-field booking-preferred-card">
+            <div
+              className="booking-field preferred-time-field booking-preferred-card"
+            >
 
-              <label htmlFor="preferred-time">
+              <label
+                htmlFor="preferred-time"
+              >
                 A que horas gostarias de marcar?
               </label>
 
 
-              <div className="native-picker-wrap">
+              <div
+                className="native-picker-wrap"
+              >
 
                 <input
                   id="preferred-time"
@@ -1161,9 +1509,13 @@ export default function BookingModal({
 
           {/* SUGESTÕES */}
 
-          <div className="booking-times-section">
+          <div
+            className="booking-times-section"
+          >
 
-            <div className="booking-times-header">
+            <div
+              className="booking-times-header"
+            >
 
               <label>
                 Horários disponíveis próximos
@@ -1173,12 +1525,21 @@ export default function BookingModal({
               {selectedService && (
 
                 <span>
-                  {selectedService.duration}
+                  {
+                    selectedService
+                      .duration
+                  }
+
                   {' min · '}
 
-                  {formatCurrency(
-                    selectedService.price,
-                  )}
+                  {
+                    selectedService
+                      .priceLabel ||
+                    formatCurrency(
+                      selectedService
+                        .price,
+                    )
+                  }
                 </span>
 
               )}
@@ -1186,183 +1547,236 @@ export default function BookingModal({
             </div>
 
 
-            {!date ||
-            !selectedService ? (
+            {
+              !date ||
+              !selectedService
+                ? (
 
-              <div className="booking-times-placeholder">
-                Escolhe primeiro a data
-                e o corte.
-              </div>
+                  <div
+                    className="booking-times-placeholder"
+                  >
+                    Escolhe primeiro a data e o serviço.
+                  </div>
 
-            ) : !preferredTime ? (
+                )
+                : !preferredTime
+                  ? (
 
-              <div className="booking-times-placeholder">
-                Diz-nos a que horas
-                gostarias de marcar.
-              </div>
+                    <div
+                      className="booking-times-placeholder"
+                    >
+                      Diz-nos a que horas gostarias de marcar.
+                    </div>
 
-            ) : loadingTimes ? (
+                  )
+                  : loadingTimes
+                    ? (
 
-              <div className="booking-times-placeholder">
-                A procurar os melhores
-                horários...
-              </div>
-
-            ) : suggestedTimes.length ===
-              0 ? (
-
-              <div className="booking-times-placeholder">
-
-                {nextDaySuggestion
-                  ? 'Hoje já não é possível marcar essa hora com 8 horas de antecedência.'
-                  : 'Não encontrámos horários disponíveis próximos desta hora. Experimenta outra hora.'}
-
-              </div>
-
-            ) : (
-
-              <div className="time-grid time-grid-suggestions">
-
-                {suggestedTimes.map(
-                  (suggestion) => {
-
-                    const isSelected =
-                      time ===
-                      suggestion.time;
-
-
-                    let label =
-                      'Disponível';
-
-
-                    if (
-                      suggestion.recommended &&
-                      suggestion.requested
-                    ) {
-
-                      label =
-                        'A tua hora · recomendada';
-
-                    } else if (
-                      suggestion.recommended
-                    ) {
-
-                      label =
-                        'Melhor encaixe';
-
-                    } else if (
-                      suggestion.requested
-                    ) {
-
-                      label =
-                        'A tua hora';
-
-                    }
-
-
-                    return (
-
-                      <button
-                        key={
-                          suggestion.time
-                        }
-                        type="button"
-                        className={[
-                          'time-btn',
-                          'suggestion-time-btn',
-
-                          isSelected
-                            ? 'selected'
-                            : '',
-
-                          suggestion.recommended
-                            ? 'recommended'
-                            : '',
-
-                          suggestion.requested
-                            ? 'requested'
-                            : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        onClick={() =>
-                          setTime(
-                            suggestion.time,
-                          )
-                        }
+                      <div
+                        className="booking-times-placeholder"
                       >
+                        A procurar os melhores horários...
+                      </div>
 
-                        <strong>
-                          {suggestion.time}
-                        </strong>
+                    )
+                    : suggestedTimes
+                        .length ===
+                      0
+                      ? (
+
+                        <div
+                          className="booking-times-placeholder"
+                        >
+
+                          {
+                            nextDaySuggestion
+                              ? 'Essa hora já passou hoje.'
+                              : 'Não encontrámos horários disponíveis próximos desta hora. Experimenta outra hora.'
+                          }
+
+                        </div>
+
+                      )
+                      : (
+
+                        <div
+                          className="time-grid time-grid-suggestions"
+                        >
+
+                          {suggestedTimes.map(
+                            (
+                              suggestion,
+                            ) => {
+
+                              const isSelected =
+                                time ===
+                                suggestion
+                                  .time;
 
 
-                        <small>
-                          {label}
-                        </small>
+                              let label =
+                                'Disponível';
 
-                      </button>
 
-                    );
+                              if (
+                                suggestion
+                                  .recommended &&
+                                suggestion
+                                  .requested
+                              ) {
 
-                  },
-                )}
+                                label =
+                                  'A tua hora · recomendada';
 
-              </div>
+                              } else if (
+                                suggestion
+                                  .recommended
+                              ) {
 
-            )}
+                                label =
+                                  'Melhor encaixe';
+
+                              } else if (
+                                suggestion
+                                  .requested
+                              ) {
+
+                                label =
+                                  'A tua hora';
+
+                              }
+
+
+                              return (
+
+                                <button
+                                  key={
+                                    suggestion
+                                      .time
+                                  }
+                                  type="button"
+                                  className={[
+                                    'time-btn',
+                                    'suggestion-time-btn',
+
+                                    isSelected
+                                      ? 'selected'
+                                      : '',
+
+                                    suggestion
+                                      .recommended
+                                      ? 'recommended'
+                                      : '',
+
+                                    suggestion
+                                      .requested
+                                      ? 'requested'
+                                      : '',
+                                  ]
+                                    .filter(
+                                      Boolean,
+                                    )
+                                    .join(
+                                      ' ',
+                                    )}
+                                  onClick={
+                                    () =>
+                                      setTime(
+                                        suggestion
+                                          .time,
+                                      )
+                                  }
+                                >
+
+                                  <strong>
+                                    {
+                                      suggestion
+                                        .time
+                                    }
+                                  </strong>
+
+
+                                  <small>
+                                    {
+                                      label
+                                    }
+                                  </small>
+
+                                </button>
+
+                              );
+
+                            },
+                          )}
+
+                        </div>
+
+                      )
+            }
 
 
             {/* SUGESTÃO AMANHÃ */}
 
-            {nextDaySuggestion && (
+            {
+              nextDaySuggestion &&
+              (
 
-              <div
-                className="time-grid time-grid-suggestions"
-                style={{
-                  marginTop:
-                    '6px',
-                }}
-              >
-
-                <button
-                  type="button"
-                  className="time-btn suggestion-time-btn recommended"
+                <div
+                  className="time-grid time-grid-suggestions"
                   style={{
-                    gridColumn:
-                      '1 / -1',
+                    marginTop:
+                      '6px',
                   }}
-                  onClick={
-                    useNextDaySuggestion
-                  }
                 >
 
-                  <strong>
-                    Amanhã ·{' '}
-                    {nextDaySuggestion.time}
-                  </strong>
+                  <button
+                    type="button"
+                    className="time-btn suggestion-time-btn recommended"
+                    style={{
+                      gridColumn:
+                        '1 / -1',
+                    }}
+                    onClick={
+                      useNextDaySuggestion
+                    }
+                  >
+
+                    <strong>
+                      Amanhã ·{' '}
+                      {
+                        nextDaySuggestion
+                          .time
+                      }
+                    </strong>
 
 
-                  <small>
-                    Hoje já não cumpre as 8h · podes marcar amanhã à mesma hora
-                  </small>
+                    <small>
+                      Essa hora já passou hoje · podes marcar amanhã à mesma hora
+                    </small>
 
-                </button>
+                  </button>
 
-              </div>
+                </div>
 
-            )}
+              )
+            }
 
           </div>
 
 
           {/* CLIENTE */}
 
-          <div className="booking-client-grid">
+          <div
+            className="booking-client-grid"
+          >
 
-            <div className="booking-field">
+            <div
+              className="booking-field"
+            >
 
-              <label htmlFor="customer-name">
+              <label
+                htmlFor="customer-name"
+              >
                 Nome
               </label>
 
@@ -1373,12 +1787,15 @@ export default function BookingModal({
                 value={
                   form.name
                 }
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setForm({
                     ...form,
 
                     name:
-                      event.target
+                      event
+                        .target
                         .value,
                   })
                 }
@@ -1390,9 +1807,13 @@ export default function BookingModal({
             </div>
 
 
-            <div className="booking-field">
+            <div
+              className="booking-field"
+            >
 
-              <label htmlFor="customer-phone">
+              <label
+                htmlFor="customer-phone"
+              >
                 Telemóvel
               </label>
 
@@ -1403,12 +1824,15 @@ export default function BookingModal({
                 value={
                   form.phone
                 }
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setForm({
                     ...form,
 
                     phone:
-                      event.target
+                      event
+                        .target
                         .value,
                   })
                 }
@@ -1420,9 +1844,13 @@ export default function BookingModal({
             </div>
 
 
-            <div className="booking-field booking-field-full">
+            <div
+              className="booking-field booking-field-full"
+            >
 
-              <label htmlFor="customer-email">
+              <label
+                htmlFor="customer-email"
+              >
                 Email
               </label>
 
@@ -1433,12 +1861,15 @@ export default function BookingModal({
                 value={
                   form.email
                 }
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setForm({
                     ...form,
 
                     email:
-                      event.target
+                      event
+                        .target
                         .value,
                   })
                 }
@@ -1454,7 +1885,9 @@ export default function BookingModal({
 
           {error && (
 
-            <div className="booking-error">
+            <div
+              className="booking-error"
+            >
               {error}
             </div>
 
@@ -1471,9 +1904,11 @@ export default function BookingModal({
             }
           >
 
-            {sending
-              ? 'A agendar...'
-              : 'Agendar'}
+            {
+              sending
+                ? 'A agendar...'
+                : 'Agendar'
+            }
 
           </button>
 

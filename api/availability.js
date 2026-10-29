@@ -190,6 +190,11 @@ export default async function handler(
     }
 
 
+    const professionalId =
+      selectedService.professionalId ||
+      'angelo';
+
+
     /* =====================================================
        DOMINGO
     ===================================================== */
@@ -218,7 +223,7 @@ export default async function handler(
 
 
     /* =====================================================
-       MARCAÇÕES EXISTENTES DESSE DIA / LOJA
+       MARCAÇÕES EXISTENTES DESSE DIA / PROFISSIONAL
     ===================================================== */
 
     const {
@@ -233,15 +238,17 @@ export default async function handler(
           id,
           appointment_time,
           duration,
-          status
+          status,
+          professional_id,
+          professional_name
         `)
         .eq(
           'appointment_date',
           date,
         )
         .eq(
-          'location',
-          location,
+          'professional_id',
+          professionalId,
         )
         .neq(
           'status',
@@ -268,11 +275,6 @@ export default async function handler(
 
     /* =====================================================
        FILTRAR HORÁRIOS DISPONÍVEIS
-
-       Aqui são removidos:
-       - horários com menos de 8h
-       - horários que chocam com outra marcação
-       - horários fora dos períodos definidos no bookingRules
     ===================================================== */
 
     const availableTimes =
@@ -354,7 +356,7 @@ export default async function handler(
 
 
     /* =====================================================
-       SUGESTÕES NORMAIS PARA O DIA ESCOLHIDO
+       SUGESTÕES
     ===================================================== */
 
     const suggestedTimes =
@@ -373,10 +375,6 @@ export default async function handler(
       });
 
 
-    /* =====================================================
-       VER SE A HORA PEDIDA EXISTE NO HORÁRIO NORMAL DO DIA
-    ===================================================== */
-
     const requestedSlotIsValidToday =
       isValidBookingSlot(
         preferredTime,
@@ -386,10 +384,6 @@ export default async function handler(
       );
 
 
-    /* =====================================================
-       FOI BLOQUEADA ESPECIFICAMENTE PELAS 8 HORAS?
-    ===================================================== */
-
     const blockedByMinimumNotice =
       requestedSlotIsValidToday &&
       !hasMinimumNotice(
@@ -397,20 +391,6 @@ export default async function handler(
         preferredTime,
       );
 
-
-    /* =====================================================
-       SUGESTÃO DO DIA SEGUINTE
-
-       Só procuramos amanhã quando:
-       - aquela hora seria válida hoje
-       - o problema são apenas as 8 horas de antecedência
-
-       Depois validamos:
-       - amanhã a mesma loja abre nessa hora
-       - o serviço cabe no horário
-       - amanhã já cumpre as 8 horas
-       - a hora não está ocupada
-    ===================================================== */
 
     let nextDaySuggestion =
       null;
@@ -460,15 +440,17 @@ export default async function handler(
               id,
               appointment_time,
               duration,
-              status
+              status,
+              professional_id,
+              professional_name
             `)
             .eq(
               'appointment_date',
               nextDate,
             )
             .eq(
-              'location',
-              location,
+              'professional_id',
+              professionalId,
             )
             .neq(
               'status',
