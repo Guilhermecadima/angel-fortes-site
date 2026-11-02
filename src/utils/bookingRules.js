@@ -6,6 +6,28 @@ export const SLOT_INTERVAL = 10;
 
 
 /* =========================================================
+   DIAS TOTALMENTE BLOQUEADOS
+========================================================= */
+
+export const BLOCKED_BOOKING_DATES = [
+  '2026-11-11',
+  '2026-11-12',
+  '2026-11-13',
+  '2026-12-03',
+  '2026-12-08',
+];
+
+
+export function isBlockedBookingDate(
+  dateString,
+) {
+  return BLOCKED_BOOKING_DATES.includes(
+    String(dateString || ''),
+  );
+}
+
+
+/* =========================================================
    TIME -> MINUTES
 ========================================================= */
 
@@ -146,67 +168,6 @@ export function isWednesday(dateString) {
 
 /* =========================================================
    HORÁRIOS
-
-   SEGUNDA
-   Santa Marta:
-   09:00 - 13:00
-   15:00 - 19:00
-
-   Costa:
-   15:00 - 19:00
-
-
-   TERÇA
-   Santa Marta:
-   09:00 - 13:00
-   15:00 - 19:00
-
-   Costa:
-   15:00 - 19:00
-
-
-   QUARTA
-   Santa Marta:
-   FECHADO
-
-   Costa:
-   09:00 - 13:00
-   15:00 - 19:00
-
-
-   QUINTA
-   Santa Marta:
-   09:00 - 13:00
-   15:00 - 19:00
-
-   Costa:
-   15:00 - 19:00
-
-
-   SEXTA
-   Santa Marta:
-   09:00 - 13:00
-   15:00 - 19:00
-
-   Costa:
-   FECHADO
-
-
-   SÁBADO
-   Santa Marta:
-   08:00 - 13:00
-   15:00 - 19:00
-
-   Costa:
-   15:00 - 19:00
-
-
-   DOMINGO
-   FECHADO
-
-
-   ALMOÇO:
-   13:00 - 15:00 bloqueado
 ========================================================= */
 
 export function getOpeningPeriodsForDate(
@@ -216,6 +177,7 @@ export function getOpeningPeriodsForDate(
   const dayOfWeek =
     getDayOfWeek(dateString);
 
+
   if (
     dayOfWeek === null
   ) {
@@ -223,7 +185,23 @@ export function getOpeningPeriodsForDate(
   }
 
 
-  // Domingo fechado
+  /* =======================================================
+     DIAS BLOQUEADOS MANUALMENTE
+  ======================================================= */
+
+  if (
+    isBlockedBookingDate(
+      dateString,
+    )
+  ) {
+    return [];
+  }
+
+
+  /* =======================================================
+     DOMINGO
+  ======================================================= */
+
   if (
     dayOfWeek === 0
   ) {
@@ -239,38 +217,52 @@ export function getOpeningPeriodsForDate(
     location === 'santa_marta'
   ) {
 
-// Quarta-feira:
-// descanso em Santa Marta
-if (
-  dayOfWeek === 3
-) {
-  return [];
-}
+    // Quarta-feira:
+    // descanso em Santa Marta
+    if (
+      dayOfWeek === 3
+    ) {
+      return [];
+    }
 
 
-// Sábado começa às 08:00
-if (
-  dayOfWeek === 6
-) {
-  return [
-    {
-      start: '08:00',
-      end: '13:00',
-    },
-    {
-      start: '15:00',
-      end: '19:00',
-    },
-  ];
-}
+    // Sábado começa às 08:00
+    if (
+      dayOfWeek === 6
+    ) {
+      return [
+        {
+          start: '08:00',
+          end: '13:00',
+        },
+        {
+          start: '15:00',
+          end: '19:00',
+        },
+      ];
+    }
 
 
-// Segunda-feira:
-// dia todo em Santa Marta
-// com almoço 13:00 - 15:00
-  if (
-    dayOfWeek === 1
-  ) {
+    // Segunda-feira:
+    // dia todo em Santa Marta
+    // com almoço 13:00 - 15:00
+    if (
+      dayOfWeek === 1
+    ) {
+      return [
+        {
+          start: '09:00',
+          end: '13:00',
+        },
+        {
+          start: '15:00',
+          end: '19:00',
+        },
+      ];
+    }
+
+
+    // Terça, quinta e sexta
     return [
       {
         start: '09:00',
@@ -282,20 +274,6 @@ if (
       },
     ];
   }
-
-
-  // Terça, quinta e sexta
-  return [
-    {
-      start: '09:00',
-      end: '13:00',
-    },
-    {
-      start: '15:00',
-      end: '19:00',
-    },
-  ];
-}
 
 
   /* =======================================================

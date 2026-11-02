@@ -8,14 +8,6 @@ export const services = [
     professionalName: 'Ângelo',
   },
   {
-    id: 'corte-simples',
-    name: 'Corte Simples',
-    price: 13,
-    duration: 20,
-    professionalId: 'angelo',
-    professionalName: 'Ângelo',
-  },
-  {
     id: 'barba',
     name: 'Barba',
     price: 8,
@@ -82,21 +74,15 @@ export const services = [
 
 
   /* =======================================================
-     SARA — TRANÇAS / PENTEADOS
+     SARA
   ======================================================= */
 
   {
     id: 'tranca-corrida',
     name: 'Trança Corrida — Sara',
-
-    price: null,
+    price: 25,
     priceLabel: '25–30 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
@@ -104,15 +90,9 @@ export const services = [
   {
     id: 'tranca-solta',
     name: 'Trança Solta — Sara',
-
     price: 50,
     priceLabel: '50 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
@@ -120,15 +100,9 @@ export const services = [
   {
     id: 'tranca-solta-cachos',
     name: 'Trança Solta com Cachos — Sara',
-
-    price: null,
+    price: 50,
     priceLabel: '50–55 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
@@ -136,15 +110,9 @@ export const services = [
   {
     id: 'tissagem',
     name: 'Tissagem — Sara',
-
-    price: null,
+    price: 50,
     priceLabel: '50–60 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
@@ -152,15 +120,9 @@ export const services = [
   {
     id: 'penteado-infantil',
     name: 'Penteado Infantil — Sara',
-
-    price: null,
+    price: 20,
     priceLabel: '20–25 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
@@ -168,15 +130,9 @@ export const services = [
   {
     id: 'penteado-masculino',
     name: 'Penteado Masculino — Sara',
-
-    price: null,
+    price: 20,
     priceLabel: '20–25 €',
-
-    /*
-     * DURAÇÃO PROVISÓRIA
-     */
     duration: 60,
-
     professionalId: 'sara',
     professionalName: 'Sara',
   },
