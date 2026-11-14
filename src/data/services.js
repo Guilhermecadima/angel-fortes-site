@@ -50,7 +50,7 @@ export const services = [
   {
     id: 'corte-barba',
     name: 'Corte + Barba',
-    price: 18,
+    price: 20,
     duration: 25,
     professionalId: 'angelo',
     professionalName: 'Ângelo',
