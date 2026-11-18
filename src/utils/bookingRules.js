@@ -222,9 +222,13 @@ export function getOpeningPeriodsForDate(
     if (
       dayOfWeek === 3
     ) {
-      return [];
+      return [
+        {
+          start: '09:00',
+          end: '13:00',
+        },
+      ];
     }
-
 
     // Sábado começa às 08:00
     if (
