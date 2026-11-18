@@ -296,10 +296,6 @@ export function getOpeningPeriodsForDate(
     ) {
       return [
         {
-          start: '09:00',
-          end: '13:00',
-        },
-        {
           start: '15:00',
           end: '19:00',
         },
